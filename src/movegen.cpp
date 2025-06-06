@@ -2,10 +2,40 @@
 
 namespace MoveGen {
 
+static uint64_t knight_attacks[64];
+static bool knight_attacks_initialized = false;
+
 // Encontra o índice do bit menos significativo (LSB) em um bitboard
 inline int get_lsb_index(uint64_t bitboard) {
     if (bitboard == 0) return -1;
     return __builtin_ctzll(bitboard);
+}
+
+void initialize_knight_attacks() {
+    if (knight_attacks_initialized) {
+        return;
+    }
+
+    for (int square = 0; square < 64; ++square) {
+        knight_attacks[square] = 0ULL;
+        int rank = square / 8;
+        int file = square % 8;
+
+        const int dr[] = {-2, -2, -1, -1, 1, 1, 2, 2};
+        const int df[] = {-1, 1, -2, 2, -2, 2, -1, 1};
+
+        for (int i = 0; i < 8; ++i) {
+            int target_rank = rank + dr[i];
+            int target_file = file + df[i];
+
+            if (target_rank >= 0 && target_rank < 8 && target_file >= 0 &&
+                target_file < 8) {
+                int target_square = target_rank * 8 + target_file;
+                knight_attacks[square] |= (1ULL << target_square);
+            }
+        }
+    }
+    knight_attacks_initialized = true;
 }
 
 // Retorna os movimentos possíveis para peões brancos
@@ -252,6 +282,82 @@ std::vector<Move> generate_black_king_moves(const Board& board_state) {
     return moves;
 }
 
+// Retorna os movimentos possíveis para os cavalos pretos
+std::vector<Move> generate_white_knight_moves(const Board& board_state) {
+    std::vector<Move> moves;  // Vetor para armazenar os movimentos válidos
+
+    // Pega o bitboard de todos os cavalos brancos
+    uint64_t current_knights = board_state.white_knights;
+
+    // Em um fluxo normal de jogo, a tabela de ataques dos cavalos já deve
+    // ter sido inicializada se chegou aqui.
+
+    // Itera sobre cada cavalo branco no tabuleiro
+    while (current_knights) {
+        // Pega a casa do cavalo branco atual (o bit menos significativo)
+        int knight_square = get_lsb_index(current_knights);
+
+        // Obtém todos os saltos possíveis do cavalo nessa casa
+        uint64_t potential_jumps = knight_attacks[knight_square];
+
+        // Mantém apenas os saltos que não colidem com peças brancas
+        uint64_t valid_jumps = potential_jumps & (~board_state.white_occupied);
+
+        // Itera sobre cada salto válido
+        uint64_t remaining_jumps = valid_jumps;
+        while (remaining_jumps) {
+            int to_square = get_lsb_index(remaining_jumps);
+
+            // Adiciona o movimento a lista e remove o bit processado
+            moves.push_back(Move(knight_square, to_square));
+            remaining_jumps &= remaining_jumps - 1;
+        }
+
+        // Remove o cavalo processado do bitboard
+        current_knights &= current_knights - 1;
+    }
+
+    return moves;
+}
+
+// Retorna os movimentos possíveis para os cavalos pretos
+std::vector<Move> generate_black_knight_moves(const Board& board_state) {
+    std::vector<Move> moves;  // Vetor para armazenar os movimentos válidos
+
+    // Pega o bitboard de todos os cavalos pretos
+    uint64_t current_knights = board_state.black_knights;
+
+    // Em um fluxo normal de jogo, a tabela de ataques dos cavalos já deve
+    // ter sido inicializada se chegou aqui.
+
+    // Itera sobre cada cavalo preto no tabuleiro
+    while (current_knights) {
+        // Pega a casa do cavalo preto atual (o bit menos significativo)
+        int knight_square = get_lsb_index(current_knights);
+
+        // Obtém todos os saltos possíveis do cavalo nessa casa
+        uint64_t potential_jumps = knight_attacks[knight_square];
+
+        // Mantém apenas os saltos que não colidem com peças pretas
+        uint64_t valid_jumps = potential_jumps & (~board_state.black_occupied);
+
+        // Itera sobre cada salto válido
+        uint64_t remaining_jumps = valid_jumps;
+        while (remaining_jumps) {
+            int to_square = get_lsb_index(remaining_jumps);
+
+            // Adiciona o movimento a lista e remove o bit processado
+            moves.push_back(Move(knight_square, to_square));
+            remaining_jumps &= remaining_jumps - 1;
+        }
+
+        // Remove o cavalo processado do bitboard
+        current_knights &= current_knights - 1;
+    }
+
+    return moves;
+}
+
 // Gera todos os movimentos válidos para o jogador atual
 std::vector<Move> generate_all_moves(const Board& board_state) {
     // Vetor para guardar todos os movimentos válidos
@@ -259,6 +365,9 @@ std::vector<Move> generate_all_moves(const Board& board_state) {
 
     // Vetor auxiliar para armazenar movimentos de peças individuais
     std::vector<Move> piece_moves_buffer;
+
+    // Inicializa os ataques dos cavalos, se ainda não foi feito
+    initialize_knight_attacks();
 
     // Gera movimentos para peões e reis, dependendo da cor do jogador
     if (board_state.turn == WHITE) {
@@ -274,6 +383,12 @@ std::vector<Move> generate_all_moves(const Board& board_state) {
                                 piece_moves_buffer.begin(),
                                 piece_moves_buffer.end());
 
+        // Gera movimentos para os cavalos brancos e inclui no vetor
+        piece_moves_buffer = generate_white_knight_moves(board_state);
+        all_player_moves.insert(all_player_moves.end(),
+                                piece_moves_buffer.begin(),
+                                piece_moves_buffer.end());
+
     } else {
         // Gera movimentos para peões pretos e inclui no vetor
         piece_moves_buffer = generate_black_pawn_moves(board_state);
@@ -283,6 +398,12 @@ std::vector<Move> generate_all_moves(const Board& board_state) {
 
         // Gera movimentos para o rei preto e inclui no vetor
         piece_moves_buffer = generate_black_king_moves(board_state);
+        all_player_moves.insert(all_player_moves.end(),
+                                piece_moves_buffer.begin(),
+                                piece_moves_buffer.end());
+
+        // Gera movimentos para os cavalos pretos e inclui no vetor
+        piece_moves_buffer = generate_black_knight_moves(board_state);
         all_player_moves.insert(all_player_moves.end(),
                                 piece_moves_buffer.begin(),
                                 piece_moves_buffer.end());

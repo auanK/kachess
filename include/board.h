@@ -12,6 +12,8 @@ class Board {
     uint64_t black_pawns;
     uint64_t white_king;
     uint64_t black_king;
+    uint64_t white_knights;
+    uint64_t black_knights;
 
     uint64_t white_occupied;
     uint64_t black_occupied;

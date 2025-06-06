@@ -10,6 +10,8 @@ void Board::initialize_board_state() {
     black_pawns = 0ULL;
     white_king = 0ULL;
     black_king = 0ULL;
+    white_knights = 0ULL;
+    black_knights = 0ULL;
 
     // Configurando uma fileira de peões brancos
     // 00000000
@@ -58,9 +60,33 @@ void Board::initialize_board_state() {
     // 00000000
     black_king = (1ULL << 60);
 
+    // Configurando os cavalos brancos
+    // Os cavalos brancos começam nas casas b1 e g1
+    // 00000000
+    // 00000000
+    // 00000000
+    // 00000000
+    // 00000000
+    // 00000000
+    // 00000000
+    // 01000010 <- Cavalos brancos (casas 1 e 6, fileira 1)
+    white_knights = (1ULL << 1) | (1ULL << 6);
+
+    // Configurando os cavalos pretos
+    // Os cavalos pretos começam nas casas b8 e g8
+    // 01000010 <- Cavalos pretos (casas 57 e 62, fileira 8)
+    // 00000000
+    // 00000000
+    // 00000000
+    // 00000000
+    // 00000000
+    // 00000000
+    // 00000000
+    black_knights = (1ULL << 57) | (1ULL << 62);
+
     // Calculando os bitboards de ocupação
-    white_occupied = white_pawns | white_king;
-    black_occupied = black_pawns | black_king;
+    white_occupied = white_pawns | white_king | white_knights;
+    black_occupied = black_pawns | black_king | black_knights;
     all_occupied = white_occupied | black_occupied;
 
     // Definir o turno inicial
@@ -96,9 +122,16 @@ void Board::apply_move(const Move& move_to_apply) {
             white_occupied &= ~from_bit;
             white_occupied |= to_bit;
             piece_successfully_moved = true;
+        } else if (white_knights & from_bit) {
+            white_knights &= ~from_bit;
+            white_knights |= to_bit;
+            white_occupied &= ~from_bit;
+            white_occupied |= to_bit;
+            piece_successfully_moved = true;
         }
+
         /**
-         * O restante dos movimentos (como torres, bispos, cavalos e
+         * O restante dos movimentos (como torres, bispos e
          * rainhas) serão implementados aqui.
          */
     } else {
@@ -117,7 +150,18 @@ void Board::apply_move(const Move& move_to_apply) {
             black_occupied &= ~from_bit;
             black_occupied |= to_bit;
             piece_successfully_moved = true;
+        } else if (black_knights & from_bit) {
+            black_knights &= ~from_bit;
+            black_knights |= to_bit;
+            black_occupied &= ~from_bit;
+            black_occupied |= to_bit;
+            piece_successfully_moved = true;
         }
+
+        /**
+         * O restante dos movimentos (como torres, bispos e
+         * rainhas) serão implementados aqui.
+         */
     }
 
     // Caso o movimento não tenha sido bem-sucedido, mostra uma mensagem de erro
@@ -157,6 +201,10 @@ void Board::print_board() const {
                 piece_char = 'K';
             } else if (black_king & square_bit) {
                 piece_char = 'k';
+            } else if (white_knights & square_bit) {
+                piece_char = 'N';
+            } else if (black_knights & square_bit) {
+                piece_char = 'n';
             }
 
             std::cout << piece_char << " ";
