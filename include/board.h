@@ -28,7 +28,7 @@ class Board {
     void apply_move(const Move& move_to_apply);
 
    private:
-    void initialize_board_state();
+    void init_board_state();
 };
 
 #endif

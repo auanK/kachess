@@ -8,13 +8,13 @@
 
 namespace MoveGen {
 
-std::vector<Move> generate_white_pawn_moves(const Board& board_state);
-std::vector<Move> generate_white_king_moves(const Board& board_state);
-std::vector<Move> generate_black_pawn_moves(const Board& board_state);
-std::vector<Move> generate_black_king_moves(const Board& board_state);
-std::vector<Move> generate_white_knight_moves(const Board& board_state);
-std::vector<Move> generate_black_knight_moves(const Board& board_state);
-std::vector<Move> generate_all_moves(const Board& board_state);
+std::vector<Move> gen_white_pawn_moves(const Board& board);
+std::vector<Move> gen_white_king_moves(const Board& board);
+std::vector<Move> gen_black_pawn_moves(const Board& board);
+std::vector<Move> gen_black_king_moves(const Board& board);
+std::vector<Move> gen_white_knight_moves(const Board& board);
+std::vector<Move> gen_black_knight_moves(const Board& board);
+std::vector<Move> gen_all_moves(const Board& board);
 
 }  // namespace MoveGen
 

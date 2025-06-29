@@ -2,14 +2,14 @@
 #define MOVE_H
 
 struct Move {
-    int from_square;
-    int to_square;
+    int from;
+    int to;
 
-    Move(int from, int to) : from_square(from), to_square(to) {}
-    Move() : from_square(-1), to_square(-1) {}
+    Move(int from, int to) : from(from), to(to) {}
+    Move() : from(-1), to(-1) {}
 
     bool operator==(const Move& other) const {
-        return from_square == other.from_square && to_square == other.to_square;
+        return from == other.from && to == other.to;
     }
 };
 
