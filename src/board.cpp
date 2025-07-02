@@ -12,6 +12,8 @@ void Board::init_board_state() {
     black_king = 0ULL;
     white_knights = 0ULL;
     black_knights = 0ULL;
+    white_rooks = 0ULL;
+    black_rooks = 0ULL;
 
     // Configurando uma fileira de peões brancos
     // 00000000
@@ -84,9 +86,33 @@ void Board::init_board_state() {
     // 00000000
     black_knights = (1ULL << 57) | (1ULL << 62);
 
+    // Configurando as torres brancas
+    // As torres brancas começam nas casas a1 e h1
+    // 00000000
+    // 00000000
+    // 00000000
+    // 00000000
+    // 00000000
+    // 00000000
+    // 00000000
+    // 10000001 <- Torres brancas (casas 0 e 7, fileira 1)
+    white_rooks = (1ULL << 0) | (1ULL << 7);
+
+    // Configurando as torres pretas
+    // As torres pretas começam nas casas a8 e h8
+    // 10000001 <- Torres pretas (casas 56 e 63, fileira 8)
+    // 00000000
+    // 00000000
+    // 00000000
+    // 00000000
+    // 00000000
+    // 00000000
+    // 00000000
+    black_rooks = (1ULL << 56) | (1ULL << 63);
+
     // Calculando os bitboards de ocupação
-    white_occupied = white_pawns | white_king | white_knights;
-    black_occupied = black_pawns | black_king | black_knights;
+    white_occupied = white_pawns | white_king | white_knights | white_rooks;
+    black_occupied = black_pawns | black_king | black_knights | black_rooks;
     all_occupied = white_occupied | black_occupied;
 
     // Definir o turno inicial
@@ -122,16 +148,26 @@ void Board::apply_move(const Move& move_to_apply) {
             white_occupied &= ~from_bit;
             white_occupied |= to_bit;
             piece_successfully_moved = true;
-        } else if (white_knights & from_bit) {
+        }
+        // Move um cavalo branco
+        else if (white_knights & from_bit) {
             white_knights &= ~from_bit;
             white_knights |= to_bit;
             white_occupied &= ~from_bit;
             white_occupied |= to_bit;
             piece_successfully_moved = true;
         }
+        // Move uma torre branca
+        else if (white_rooks & from_bit) {
+            white_rooks &= ~from_bit;
+            white_rooks |= to_bit;
+            white_occupied &= ~from_bit;
+            white_occupied |= to_bit;
+            piece_successfully_moved = true;
+        }
 
         /**
-         * O restante dos movimentos (como torres, bispos e
+         * O restante dos movimentos (como bispos e
          * rainhas) serão implementados aqui.
          */
     } else {
@@ -150,16 +186,26 @@ void Board::apply_move(const Move& move_to_apply) {
             black_occupied &= ~from_bit;
             black_occupied |= to_bit;
             piece_successfully_moved = true;
-        } else if (black_knights & from_bit) {
+        }
+        // Move um cavalo preto
+        else if (black_knights & from_bit) {
             black_knights &= ~from_bit;
             black_knights |= to_bit;
             black_occupied &= ~from_bit;
             black_occupied |= to_bit;
             piece_successfully_moved = true;
         }
+        // Move uma torre preta
+        else if (black_rooks & from_bit) {
+            black_rooks &= ~from_bit;
+            black_rooks |= to_bit;
+            black_occupied &= ~from_bit;
+            black_occupied |= to_bit;
+            piece_successfully_moved = true;
+        }
 
         /**
-         * O restante dos movimentos (como torres, bispos e
+         * O restante dos movimentos (como bispos e
          * rainhas) serão implementados aqui.
          */
     }
@@ -205,6 +251,10 @@ void Board::print_board() const {
                 piece_char = 'N';
             } else if (black_knights & square_bit) {
                 piece_char = 'n';
+            } else if (white_rooks & square_bit) {
+                piece_char = 'R';
+            } else if (black_rooks & square_bit) {
+                piece_char = 'r';
             }
 
             std::cout << piece_char << " ";

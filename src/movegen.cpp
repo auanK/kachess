@@ -305,7 +305,123 @@ std::vector<Move> gen_black_knight_moves(const Board& board) {
     return moves;
 }
 
-//// Gera todos os movimentos válidos para o jogador atual
+// Gera todos os movimentos válidos para as torres brancas
+std::vector<Move> gen_white_rook_moves(const Board& board) {
+    std::vector<Move> moves;  // Vetor para armazenar os movimentos válidos
+
+    // Pega o bitboard de todas as torres brancas
+    uint64_t rooks = board.white_rooks;
+
+    // Itera sobre cada torre branca no tabuleiro
+    while (rooks) {
+        int from_square = get_lsb(rooks);
+
+        // Deltas para as 4 direções possíveis (cima, baixo, direita, esquerda)
+        const int deltas[4] = {8, -8, 1, -1};
+
+        // Para cada uma das 4 direções
+        for (int delta : deltas) {
+            int to_square = from_square;  // Posição inicial da torre
+
+            // Vai deslizando na direção do delta
+            while (true) {
+                to_square += delta;  // Move uma casa na direção
+
+                // Se ultrapassar os limites do tabuleiro, sai do loop
+                if (to_square < 0 || to_square >= 64) break;
+
+                // Evita dar a volta na borda do tabuleiro
+                // (ex: de h1 para a2)
+                if ((delta == 1 || delta == -1) &&
+                    (to_square / 8 != from_square / 8)) {
+                    break;
+                }
+
+                // Cria uma máscara de bit para a casa de destino
+                uint64_t to_bit = (1ULL << to_square);
+
+                // Se a casa já estiver ocupada por uma peça branca,
+                // não pode mover para lá e sai o loop
+                if (board.white_occupied & to_bit) break;
+
+                // Se a casa já estiver ocupada por uma peça preta,
+                // adiciona o movimento e sai do loop
+                if (board.black_occupied & to_bit) {
+                    moves.push_back(Move(from_square, to_square));
+                    break;
+                }
+
+                // A casa está vazia, adiciona o movimento
+                // e continua deslizando na mesma direção
+                moves.push_back(Move(from_square, to_square));
+            }
+        }
+
+        // Remove a torre processada do bitboard
+        rooks &= rooks - 1;
+    }
+
+    return moves;
+}
+
+// Gera todos os movimentos válidos para as torres pretas
+std::vector<Move> gen_black_rook_moves(const Board& board) {
+    std::vector<Move> moves;  // Vetor para armazenar os movimentos válidos
+
+    // Pega o bitboard de todas as torres pretas
+    uint64_t rooks = board.black_rooks;
+
+    // Itera sobre cada torre preta no tabuleiro
+    while (rooks) {
+        int from_square = get_lsb(rooks);
+
+        // Delta para as 4 direções possíveis (cima, baixo, direita, esquerda)
+        const int deltas[4] = {8, -8, 1, -1};
+
+        for (int delta : deltas) {
+            int to_square = from_square;  // Posição inicial da torre
+
+            // Vai deslizando na direção do delta
+            while (true) {
+                to_square += delta;  // Move uma casa na direção
+
+                // Se ultrapassar os limites do tabuleiro, sai do loop
+                if (to_square < 0 || to_square >= 64) break;
+
+                // Evita dar a volta na borda do tabuleiro
+                // (ex: de h1 para a2)
+                if ((delta == 1 || delta == -1) &&
+                    (to_square / 8 != from_square / 8))
+                    break;
+
+                // Cria uma máscara de bit para a casa de destino
+                uint64_t to_bit = (1ULL << to_square);
+
+                // Se a casa já estiver ocupada por uma peça preta,
+                // não pode mover para lá e sai do loop
+                if (board.black_occupied & to_bit) break;
+
+                // Se a casa já estiver ocupada por uma peça branca,
+                // adiciona o movimento e sai do loop
+                if (board.white_occupied & to_bit) {
+                    moves.push_back(Move(from_square, to_square));
+                    break;
+                }
+
+                // A casa está vazia, adiciona o movimento e continua deslizando
+                // na mesma direção
+                moves.push_back(Move(from_square, to_square));
+            }
+        }
+
+        // Remove a torre processada do bitboard
+        rooks &= rooks - 1;
+    }
+
+    return moves;
+}
+
+// Gera todos os movimentos válidos para o jogador atual
 std::vector<Move> gen_all_moves(const Board& board) {
     std::vector<Move> all_moves;  // Guarda todos os movimentos válidos
     std::vector<Move> buffer;     // Guarda movimentos de peças individuais
@@ -325,6 +441,10 @@ std::vector<Move> gen_all_moves(const Board& board) {
         // Gera movimentos para os cavalos brancos e inclui no vetor
         buffer = gen_white_knight_moves(board);
         all_moves.insert(all_moves.end(), buffer.begin(), buffer.end());
+
+        // Gera movimentos para as torres brancas e inclui no vetor
+        buffer = gen_white_rook_moves(board);
+        all_moves.insert(all_moves.end(), buffer.begin(), buffer.end());
     } else {
         // Gera movimentos para peões pretos e inclui no vetor
         buffer = gen_black_pawn_moves(board);
@@ -336,6 +456,10 @@ std::vector<Move> gen_all_moves(const Board& board) {
 
         // Gera movimentos para os cavalos pretos e inclui no vetor
         buffer = gen_black_knight_moves(board);
+        all_moves.insert(all_moves.end(), buffer.begin(), buffer.end());
+
+        // Gera movimentos para as torres pretas e inclui no vetor
+        buffer = gen_black_rook_moves(board);
         all_moves.insert(all_moves.end(), buffer.begin(), buffer.end());
     }
 
