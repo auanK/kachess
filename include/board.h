@@ -16,6 +16,8 @@ class Board {
     uint64_t black_knights;
     uint64_t white_rooks;
     uint64_t black_rooks;
+    uint64_t white_bishops;
+    uint64_t black_bishops;
 
     uint64_t white_occupied;
     uint64_t black_occupied;

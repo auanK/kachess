@@ -16,6 +16,8 @@ std::vector<Move> gen_white_knight_moves(const Board& board);
 std::vector<Move> gen_black_knight_moves(const Board& board);
 std::vector<Move> gen_white_rook_moves(const Board& board);
 std::vector<Move> gen_black_rook_moves(const Board& board);
+std::vector<Move> gen_white_bishop_moves(const Board& board);
+std::vector<Move> gen_black_bishop_moves(const Board& board);
 std::vector<Move> gen_all_moves(const Board& board);
 
 }  // namespace MoveGen

@@ -110,9 +110,35 @@ void Board::init_board_state() {
     // 00000000
     black_rooks = (1ULL << 56) | (1ULL << 63);
 
+    // Configurando os bispos brancos
+    // Os bispos brancos começam nas casas c1 e f1
+    // 00000000
+    // 00000000
+    // 00000000
+    // 00000000
+    // 00000000
+    // 00000000
+    // 00000000
+    // 00100100 <- Bispos brancos (casas 2 e 5, fileira 1)
+    white_bishops = (1ULL << 2) | (1ULL << 5);
+
+    // Configurando os bispos pretos
+    // Os bispos pretos começam nas casas c8 e f8
+    // 00100100 <- Bispos pretos (casas 58 e 61, fileira 8)
+    // 00000000
+    // 00000000
+    // 00000000
+    // 00000000
+    // 00000000
+    // 00000000
+    // 00000000
+    black_bishops = (1ULL << 58) | (1ULL << 61);
+
     // Calculando os bitboards de ocupação
-    white_occupied = white_pawns | white_king | white_knights | white_rooks;
-    black_occupied = black_pawns | black_king | black_knights | black_rooks;
+    white_occupied =
+        white_pawns | white_king | white_knights | white_rooks | white_bishops;
+    black_occupied =
+        black_pawns | black_king | black_knights | black_rooks | black_bishops;
     all_occupied = white_occupied | black_occupied;
 
     // Definir o turno inicial
@@ -165,9 +191,17 @@ void Board::apply_move(const Move& move_to_apply) {
             white_occupied |= to_bit;
             piece_successfully_moved = true;
         }
+        // Move um bispo branco
+        else if (white_bishops & from_bit) {
+            white_bishops &= ~from_bit;
+            white_bishops |= to_bit;
+            white_occupied &= ~from_bit;
+            white_occupied |= to_bit;
+            piece_successfully_moved = true;
+        }
 
         /**
-         * O restante dos movimentos (como bispos e
+         * O restante dos movimentos (como
          * rainhas) serão implementados aqui.
          */
     } else {
@@ -203,9 +237,17 @@ void Board::apply_move(const Move& move_to_apply) {
             black_occupied |= to_bit;
             piece_successfully_moved = true;
         }
+        // Move um bispo preto
+        else if (black_bishops & from_bit) {
+            black_bishops &= ~from_bit;
+            black_bishops |= to_bit;
+            black_occupied &= ~from_bit;
+            black_occupied |= to_bit;
+            piece_successfully_moved = true;
+        }
 
         /**
-         * O restante dos movimentos (como bispos e
+         * O restante dos movimentos (como
          * rainhas) serão implementados aqui.
          */
     }
@@ -255,6 +297,10 @@ void Board::print_board() const {
                 piece_char = 'R';
             } else if (black_rooks & square_bit) {
                 piece_char = 'r';
+            } else if (white_bishops & square_bit) {
+                piece_char = 'B';
+            } else if (black_bishops & square_bit) {
+                piece_char = 'b';
             }
 
             std::cout << piece_char << " ";

@@ -316,7 +316,7 @@ std::vector<Move> gen_white_rook_moves(const Board& board) {
     while (rooks) {
         int from_square = get_lsb(rooks);
 
-        // Deltas para as 4 direções possíveis (cima, baixo, direita, esquerda)
+        // Deltas para as 4 direções possíveis (norte, sul, leste, oeste)
         const int deltas[4] = {8, -8, 1, -1};
 
         // Para cada uma das 4 direções
@@ -375,7 +375,7 @@ std::vector<Move> gen_black_rook_moves(const Board& board) {
     while (rooks) {
         int from_square = get_lsb(rooks);
 
-        // Delta para as 4 direções possíveis (cima, baixo, direita, esquerda)
+        // Delta para as 4 direções possíveis (norte, sul, leste, oeste)
         const int deltas[4] = {8, -8, 1, -1};
 
         for (int delta : deltas) {
@@ -421,6 +421,126 @@ std::vector<Move> gen_black_rook_moves(const Board& board) {
     return moves;
 }
 
+// Gera todos os movimentos válidos para os bispos brancos
+std::vector<Move> gen_white_bishop_moves(const Board& board) {
+    std::vector<Move> moves;  // Vetor para armazenar os movimentos válidos
+
+    // Pega o bitboard de todos os bispos brancos
+    uint64_t bishops = board.white_bishops;
+
+    // Itera sobre cada bispo branco no tabuleiro
+    while (bishops) {
+        int from_square = get_lsb(bishops);
+
+        // Deltas para as 4 direções diagonais:
+        // Noroeste, Nordeste, Sudoeste, Sudeste
+        const int deltas[4] = {7, 9, -9, -7};
+
+        // Para cada uma das 4 direções diagonais
+        for (int delta : deltas) {
+            int to_square = from_square;
+
+            // Vai deslizando na direção do delta
+            while (true) {
+                to_square += delta;  // Move uma casa na direção
+
+                // Se ultrapassar os limites do tabuleiro, sai do loop
+                if (to_square < 0 || to_square >= 64) break;
+
+                // Evita dar a volta na borda do tabuleiro
+                // (ex: de h1 para a2)
+                int from_file = (to_square - delta) % 8;
+                int to_file = to_square % 8;
+                // Um movimento diagonal válido sempre muda a coluna em 1
+                if (std::abs(from_file - to_file) != 1) break;
+
+                // Cria uma máscara de bit para a casa de destino
+                uint64_t to_bit = (1ULL << to_square);
+
+                // Se a casa já estiver ocupada por uma peça branca,
+                // não pode mover para lá e sai do loop
+                if (board.white_occupied & to_bit) break;
+
+                // Se a casa já estiver ocupada por uma peça preta,
+                // adiciona o movimento e sai do loop
+                if (board.black_occupied & to_bit) {
+                    moves.push_back(Move(from_square, to_square));
+                    break;
+                }
+
+                // A casa está vazia, adiciona o movimento e continua deslizando
+                // na mesma direção
+                moves.push_back(Move(from_square, to_square));
+            }
+        }
+
+        // Remove o bispo processado do bitboard
+        bishops &= bishops - 1;
+    }
+
+    return moves;
+}
+
+// Gera todos os movimentos válidos para os bispos pretos
+std::vector<Move> gen_black_bishop_moves(const Board& board) {
+    std::vector<Move> moves;  // Vetor para armazenar os movimentos válidos
+
+    // Pega o bitboard de todos os bispos pretos
+    uint64_t bishops = board.black_bishops;
+
+    // Itera sobre cada bispo preto no tabuleiro
+    while (bishops) {
+        int from_square = get_lsb(bishops);
+
+        // Deltas para as 4 direções diagonais:
+        // Noroeste, Nordeste, Sudoeste, Sudeste
+        const int deltas[4] = {7, 9, -9, -7};
+
+        // Para cada uma das 4 direções diagonais
+        for (int delta : deltas) {
+            int to_square = from_square;
+
+            // Vai deslizando na direção do delta
+            while (true) {
+                to_square += delta;  // Move uma casa na direção
+
+                // Se ultrapassar os limites do tabuleiro, sai do loop
+                if (to_square < 0 || to_square >= 64) break;
+
+                // Evita dar a volta na borda do tabuleiro
+                // (ex: de h1 para a2)
+                int from_file = (to_square - delta) % 8;
+                int to_file = to_square % 8;
+                // Um movimento diagonal válido sempre muda a coluna em 1
+                if (std::abs(from_file - to_file) != 1) break;
+
+                // Cria uma máscara de bit para a casa de destino
+                uint64_t to_bit = (1ULL << to_square);
+
+                // Se a casa já estiver ocupada por uma peça preta,
+                // não pode mover para lá e sai do loop
+                if (board.black_occupied & to_bit) break;
+
+                // Se a casa já estiver ocupada por uma peça branca,
+                // adiciona o movimento e sai do loop
+                if (board.white_occupied & to_bit) {
+                    moves.push_back(Move(from_square, to_square));
+                    break;
+                }
+
+                // A casa está vazia, adiciona o movimento e continua deslizando
+                // na mesma direção
+                moves.push_back(Move(from_square, to_square));
+            }
+        }
+
+        // Remove o bispo processado do bitboard
+        bishops &= bishops - 1;
+    }
+
+    return moves;
+}
+
 // Gera todos os movimentos válidos para o jogador atual
 std::vector<Move> gen_all_moves(const Board& board) {
     std::vector<Move> all_moves;  // Guarda todos os movimentos válidos
@@ -445,6 +565,10 @@ std::vector<Move> gen_all_moves(const Board& board) {
         // Gera movimentos para as torres brancas e inclui no vetor
         buffer = gen_white_rook_moves(board);
         all_moves.insert(all_moves.end(), buffer.begin(), buffer.end());
+
+        // Gera movimentos para os bispos brancos e inclui no vetor
+        buffer = gen_white_bishop_moves(board);
+        all_moves.insert(all_moves.end(), buffer.begin(), buffer.end());
     } else {
         // Gera movimentos para peões pretos e inclui no vetor
         buffer = gen_black_pawn_moves(board);
@@ -460,6 +584,10 @@ std::vector<Move> gen_all_moves(const Board& board) {
 
         // Gera movimentos para as torres pretas e inclui no vetor
         buffer = gen_black_rook_moves(board);
+        all_moves.insert(all_moves.end(), buffer.begin(), buffer.end());
+
+        // Gera movimentos para os bispos pretos e inclui no vetor
+        buffer = gen_black_bishop_moves(board);
         all_moves.insert(all_moves.end(), buffer.begin(), buffer.end());
     }
 
