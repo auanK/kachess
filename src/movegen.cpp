@@ -4,11 +4,14 @@
 
 namespace MoveGen {
 
+// Flag de inicialização das tabelas de ataques
+static bool table_attacks_ready = false;
+
+// Tabela de ataques do rei
+static uint64_t king_attacks[64];
+
 // Tabela de ataques dos cavalos
 static uint64_t knight_attacks[64];
-
-// Flag de inicialização do knight_attacks
-static bool knight_attacks_ready = false;
 
 // Encontra o índice do bit menos significativo (LSB) em um bitboard
 inline int get_lsb(uint64_t bb) {
@@ -16,29 +19,61 @@ inline int get_lsb(uint64_t bb) {
     return __builtin_ctzll(bb);
 }
 
-// Inicializa a tabela de ataques dos cavalos
-void init_knight_attacks() {
-    if (knight_attacks_ready) return;
+// Inicializa a tabela de ataques do rei
+void init_king_attacks() {
+    // Itera sobre todas as casas do tabuleiro
+    for (int from = 0; from < 64; ++from) {
+        king_attacks[from] = 0ULL;
+        int from_file = from % 8;
 
-    for (int sq = 0; sq < 64; ++sq) {
-        knight_attacks[sq] = 0ULL;
-        int rank = sq / 8;
-        int file = sq % 8;
+        // Deltas para as 8 direções possíveis (norte, sul, leste, oeste,
+        // noroeste, nordeste, sudoeste, sudeste)
+        const int deltas[8] = {-1, +1, -8, +8, -9, -7, +7, +9};
 
-        const int dr[] = {-2, -2, -1, -1, 1, 1, 2, 2};
-        const int df[] = {-1, 1, -2, 2, -2, 2, -1, 1};
+        // Para cada direção possível
+        // (movimentos horizontais, verticais e diagonais)
+        for (int delta : deltas) {
+            int to = from + delta;
 
-        for (int i = 0; i < 8; ++i) {
-            int r = rank + dr[i];
-            int f = file + df[i];
-
-            if (r >= 0 && r < 8 && f >= 0 && f < 8) {
-                int target = r * 8 + f;
-                knight_attacks[sq] |= (1ULL << target);
+            // Verifica se está dentro dos limites do tabuleiro
+            if (to >= 0 && to < 64) {
+                // Verifica se o movimento não dá a volta na borda do tabuleiro
+                int to_file = to % 8;
+                // Um movimento horizontal ou vertical válido não deve mudar a
+                // coluna em mais de 1 casa
+                if (std::abs(from_file - to_file) <= 1)
+                    king_attacks[from] |= (1ULL << to);
             }
         }
     }
-    knight_attacks_ready = true;
+}
+
+// Inicializa a tabela de ataques dos cavalos
+void init_knight_attacks() {
+    // Itera sobre todas as casas do tabuleiro
+    for (int from = 0; from < 64; ++from) {
+        knight_attacks[from] = 0ULL;
+        int from_file = from % 8;
+
+        // Deltas para os 8 saltos possíveis do cavalo
+        // (2 casas em uma direção e 1 casa na perpendicular)
+        const int deltas[8] = {17, 15, 10, 6, -17, -15, -10, -6};
+
+        // Para cada salto possível
+        for (int delta : deltas) {
+            int to = from + delta;
+
+            // Verifica se está dentro dos limites do tabuleiro
+            if (to >= 0 && to < 64) {
+                // Verifica se o salto não dá a volta na borda do tabuleiro
+                int to_file = to % 8;
+                // A diferença de colunas para um salto de cavalo nunca pode ser
+                // maior que 2
+                if (std::abs(from_file - to_file) <= 2)
+                    knight_attacks[from] |= (1ULL << to);
+            }
+        }
+    }
 }
 
 // Gera todos os movimentos válidos para os peões brancos
@@ -179,27 +214,19 @@ std::vector<Move> gen_white_king_moves(const Board& board) {
     // Encontra a posição do rei branco (único bit 1 no bitboard)
     int from = get_lsb(king);
 
-    // Calcula as casas adjacentes onde o rei possivelmente pode se mover
-    int targets[8] = {from - 1, from + 1, from - 8, from + 8,
-                      from - 9, from - 7, from + 7, from + 9};
+    // Obtém todos os movimentos possíveis do rei nessa casa
+    // e mantém apenas os que não colidem com peças brancas
+    uint64_t targets = king_attacks[from] & ~board.white_occupied;
 
-    // Guarda a coluna de origem do rei
-    int from_file = from % 8;
+    // Itera sobre cada movimento válido
+    uint64_t remaining = targets;
+    while (remaining) {
+        int to = get_lsb(remaining);
 
-    // Itera sobre as casas adjacentes
-    for (int to : targets) {
-        // Verifica se o destino está fora do tabuleiro
-        if (to < 0 || to >= 64) continue;
-
-        // Evita dar a volta na borda do tabuleiro(ex: de a8 para h1)
-        int to_file = to % 8;
-        if (std::abs(from_file - to_file) > 1) continue;
-
-        // Verifica se o destino já está ocupado por uma peça branca
-        if (board.white_occupied & (1ULL << to)) continue;
-
-        // Adiciona o movimento válido ao vetor
+        // Adiciona o movimento à lista e remove o movimento processado
+        // do bitboard de movimentos restantes
         moves.push_back(Move(from, to));
+        remaining &= remaining - 1;
     }
 
     return moves;
@@ -207,7 +234,7 @@ std::vector<Move> gen_white_king_moves(const Board& board) {
 
 // Gera todos os movimentos válidos para o rei preto
 std::vector<Move> gen_black_king_moves(const Board& board) {
-    std::vector<Move> moves;
+    std::vector<Move> moves;  // Vetor para armazenar os movimentos válidos
 
     // Obtém o rei preto do estado do tabuleiro
     uint64_t king = board.black_king;
@@ -219,27 +246,19 @@ std::vector<Move> gen_black_king_moves(const Board& board) {
     // Encontra a posição do rei preto (único bit 1 no bitboard)
     int from = get_lsb(king);
 
-    // Calcula as casas adjacentes onde o rei possivelmente pode se mover
-    int targets[8] = {from - 1, from + 1, from - 8, from + 8,
-                      from - 9, from - 7, from + 7, from + 9};
+    // Obtém todos os movimentos possíveis do rei nessa casa
+    // e mantém apenas os que não colidem com peças pretas
+    uint64_t targets = king_attacks[from] & ~board.black_occupied;
 
-    // Guarda a coluna de origem do rei
-    int from_file = from % 8;
+    // Itera sobre cada movimento válido
+    uint64_t remaining = targets;
+    while (remaining) {
+        int to = get_lsb(remaining);
 
-    // Itera sobre as casas adjacentes
-    for (int to : targets) {
-        // Verifica se o destino está fora do tabuleiro
-        if (to < 0 || to >= 64) continue;
-
-        // Evita dar a volta na borda do tabuleiro (ex: de a8 para h1)
-        int to_file = to % 8;
-        if (std::abs(from_file - to_file) > 1) continue;
-
-        // Verifica se o destino já está ocupado por uma peça preta
-        if (board.black_occupied & (1ULL << to)) continue;
-
-        // Adiciona o movimento válido ao vetor
+        // Adiciona o movimento à lista e remove o movimento processado
+        // do bitboard de movimentos restantes
         moves.push_back(Move(from, to));
+        remaining &= remaining - 1;
     }
 
     return moves;
@@ -672,11 +691,16 @@ std::vector<Move> gen_all_moves(const Board& board) {
     std::vector<Move> all_moves;  // Guarda todos os movimentos válidos
     std::vector<Move> buffer;     // Guarda movimentos de peças individuais
 
-    init_knight_attacks();  // Inicializa os ataques dos cavalos,
+    // Inicializa as tabelas de ataques se ainda não estiverem prontas
+    if (!table_attacks_ready) {
+        init_king_attacks();         // Ataques do rei
+        init_knight_attacks();       // Ataques dos cavalos
+        table_attacks_ready = true;  // Marca que as tabelas estão prontas
+    }
 
     // Gera o movimento o vetor de movimentos possíveis para o jogador atual
-    // Calcula o vetor de cada conjunto de peças individualmente e adiciona no
-    // vetor geral após isso
+    // Calcula o vetor de cada conjunto de peças individualmente e adiciona
+    // no vetor geral após isso
     if (board.turn == WHITE) {
         buffer = gen_white_pawn_moves(board);  // Peões brancos
         all_moves.insert(all_moves.end(), buffer.begin(), buffer.end());
