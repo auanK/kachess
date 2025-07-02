@@ -134,11 +134,35 @@ void Board::init_board_state() {
     // 00000000
     black_bishops = (1ULL << 58) | (1ULL << 61);
 
+    // Configurando as rainhas brancas
+    // As rainhas brancas começam na casa d1
+    // 00000000
+    // 00000000
+    // 00000000
+    // 00000000
+    // 00000000
+    // 00000000
+    // 00000000
+    // 00001000 <- Rainha branca (casa 3, fileira 1)
+    white_queens = (1ULL << 3);
+
+    // Configurando as rainhas pretas
+    // As rainhas pretas começam na casa d8
+    // 00001000 <- Rainha preta (casa 59, fileira 8)
+    // 00000000
+    // 00000000
+    // 00000000
+    // 00000000
+    // 00000000
+    // 00000000
+    // 00000000
+    black_queens = (1ULL << 59);
+
     // Calculando os bitboards de ocupação
-    white_occupied =
-        white_pawns | white_king | white_knights | white_rooks | white_bishops;
-    black_occupied =
-        black_pawns | black_king | black_knights | black_rooks | black_bishops;
+    white_occupied = white_pawns | white_king | white_knights | white_rooks |
+                     white_bishops | white_queens;
+    black_occupied = black_pawns | black_king | black_knights | black_rooks |
+                     black_bishops | black_queens;
     all_occupied = white_occupied | black_occupied;
 
     // Definir o turno inicial
@@ -199,11 +223,14 @@ void Board::apply_move(const Move& move_to_apply) {
             white_occupied |= to_bit;
             piece_successfully_moved = true;
         }
-
-        /**
-         * O restante dos movimentos (como
-         * rainhas) serão implementados aqui.
-         */
+        // Move uma rainha branca
+        else if (white_queens & from_bit) {
+            white_queens &= ~from_bit;
+            white_queens |= to_bit;
+            white_occupied &= ~from_bit;
+            white_occupied |= to_bit;
+            piece_successfully_moved = true;
+        }
     } else {
         // Move um peão preto
         if (black_pawns & from_bit) {
@@ -245,11 +272,14 @@ void Board::apply_move(const Move& move_to_apply) {
             black_occupied |= to_bit;
             piece_successfully_moved = true;
         }
-
-        /**
-         * O restante dos movimentos (como
-         * rainhas) serão implementados aqui.
-         */
+        // Move uma rainha preta
+        else if (black_queens & from_bit) {
+            black_queens &= ~from_bit;
+            black_queens |= to_bit;
+            black_occupied &= ~from_bit;
+            black_occupied |= to_bit;
+            piece_successfully_moved = true;
+        }
     }
 
     // Caso o movimento não tenha sido bem-sucedido, mostra uma mensagem de erro
@@ -301,6 +331,10 @@ void Board::print_board() const {
                 piece_char = 'B';
             } else if (black_bishops & square_bit) {
                 piece_char = 'b';
+            } else if (white_queens & square_bit) {
+                piece_char = 'Q';
+            } else if (black_queens & square_bit) {
+                piece_char = 'q';
             }
 
             std::cout << piece_char << " ";

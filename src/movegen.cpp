@@ -332,10 +332,11 @@ std::vector<Move> gen_white_rook_moves(const Board& board) {
 
                 // Evita dar a volta na borda do tabuleiro
                 // (ex: de h1 para a2)
-                if ((delta == 1 || delta == -1) &&
-                    (to_square / 8 != from_square / 8)) {
-                    break;
-                }
+                int from_file = (to_square - delta) % 8;
+                int to_file = to_square % 8;
+                // Um movimento horizontal ou vertical válido não deve mudar a
+                // coluna em mais de 1 casa
+                if (std::abs(from_file - to_file) > 1) break;
 
                 // Cria uma máscara de bit para a casa de destino
                 uint64_t to_bit = (1ULL << to_square);
@@ -390,9 +391,11 @@ std::vector<Move> gen_black_rook_moves(const Board& board) {
 
                 // Evita dar a volta na borda do tabuleiro
                 // (ex: de h1 para a2)
-                if ((delta == 1 || delta == -1) &&
-                    (to_square / 8 != from_square / 8))
-                    break;
+                int from_file = (to_square - delta) % 8;
+                int to_file = to_square % 8;
+                // Um movimento horizontal ou vertical válido não deve mudar a
+                // coluna em mais de 1 casa
+                if (std::abs(from_file - to_file) > 1) break;
 
                 // Cria uma máscara de bit para a casa de destino
                 uint64_t to_bit = (1ULL << to_square);
@@ -451,7 +454,8 @@ std::vector<Move> gen_white_bishop_moves(const Board& board) {
                 // (ex: de h1 para a2)
                 int from_file = (to_square - delta) % 8;
                 int to_file = to_square % 8;
-                // Um movimento diagonal válido sempre muda a coluna em 1
+                // Um movimento diagonal válido não deve mudar a coluna
+                // em mais de 1 casa
                 if (std::abs(from_file - to_file) != 1) break;
 
                 // Cria uma máscara de bit para a casa de destino
@@ -511,7 +515,8 @@ std::vector<Move> gen_black_bishop_moves(const Board& board) {
                 // (ex: de h1 para a2)
                 int from_file = (to_square - delta) % 8;
                 int to_file = to_square % 8;
-                // Um movimento diagonal válido sempre muda a coluna em 1
+                // Um movimento diagonal válido não deve mudar a coluna
+                // em mais de 1 casa
                 if (std::abs(from_file - to_file) != 1) break;
 
                 // Cria uma máscara de bit para a casa de destino
@@ -538,6 +543,121 @@ std::vector<Move> gen_black_bishop_moves(const Board& board) {
         bishops &= bishops - 1;
     }
 
+    return moves;
+}
+
+// Gera todos os movimentos válidos para as damas brancas
+std::vector<Move> gen_white_queen_moves(const Board& board) {
+    std::vector<Move> moves;
+    uint64_t queens = board.white_queens;
+
+    // Itera sobre cada dama branca no tabuleiro
+    while (queens) {
+        int from_square = get_lsb(queens);
+
+        // Deltas para as 8 direções possíveis:
+        const int deltas[8] = {8, -8, 1,  -1,   // Retas (Torre)
+                               7, 9,  -9, -7};  // Diagonais (Bispo)
+
+        // Para cada uma das 8 direções
+        for (int delta : deltas) {
+            int to_square = from_square;
+
+            // Vai deslizando na direção do delta
+            while (true) {
+                to_square += delta;
+
+                // Se ultrapassar os limites do tabuleiro, sai do loop
+                if (to_square < 0 || to_square >= 64) break;
+
+                // Evita dar a volta na borda do tabuleiro
+                // Mesma lógica que as torres e bispos
+                int from_file_of_step = (to_square - delta) % 8;
+                int to_file_of_step = to_square % 8;
+                // Um movimento diagonal, horizontal ou vertical válido
+                // não deve mudar a coluna em mais de 1 casa
+                if (std::abs(from_file_of_step - to_file_of_step) > 1) break;
+
+                // Cria uma máscara de bit para a casa de destino
+                uint64_t to_bit = (1ULL << to_square);
+
+                // Se a casa já estiver ocupada por uma peça branca,
+                // não pode mover para lá e sai do loop
+                if (board.white_occupied & to_bit) break;
+
+                // Se a casa já estiver ocupada por uma peça preta,
+                // adiciona o movimento e sai do loop
+                if (board.black_occupied & to_bit) {
+                    moves.push_back(Move(from_square, to_square));
+                    break;
+                }
+
+                // A casa está vazia, adiciona o movimento e continua deslizando
+                // na mesma direção
+                moves.push_back(Move(from_square, to_square));
+            }
+        }
+
+        queens &= queens - 1;  // Remove a dama processada do bitboard
+    }
+
+    return moves;
+}
+
+// Gera todos os movimentos válidos para as damas pretas
+std::vector<Move> gen_black_queen_moves(const Board& board) {
+    std::vector<Move> moves;
+    uint64_t queens = board.black_queens;
+
+    // Itera sobre cada dama preta no tabuleiro
+    while (queens) {
+        int from_square = get_lsb(queens);
+
+        // Deltas para as 8 direções possíveis:
+        const int deltas[8] = {8, -8, 1,  -1,   // Retas (Torre)
+                               7, 9,  -9, -7};  // Diagonais (Bispo)
+
+        // Para cada uma das 8 direções
+        for (int delta : deltas) {
+            int to_square = from_square;
+
+            // Vai deslizando na direção do delta
+            while (true) {
+                to_square += delta;
+
+                // Se ultrapassar os limites do tabuleiro, sai do loop
+                if (to_square < 0 || to_square >= 64) break;
+
+                // Evita dar a volta na borda do tabuleiro
+                // Mesma lógica que as torres e bispos
+                int from_file_of_step = (to_square - delta) % 8;
+                int to_file_of_step = to_square % 8;
+                // Um movimento diagonal, horizontal ou vertical válido
+                // não deve mudar a coluna em mais de 1 casa
+                if (std::abs(from_file_of_step - to_file_of_step) > 1) break;
+
+                // Cria uma máscara de bit para a casa de destino
+                uint64_t to_bit = (1ULL << to_square);
+
+                // Se a casa já estiver ocupada por uma peça preta,
+                // não pode mover para lá e sai do loop
+                if (board.black_occupied & to_bit) break;
+
+                // Se a casa já estiver ocupada por uma peça branca,
+                // adiciona o movimento e sai do loop
+                if (board.white_occupied & to_bit) {
+                    moves.push_back(Move(from_square, to_square));
+                    break;
+                }
+
+                // A casa está vazia, adiciona o movimento e continua deslizando
+                // na mesma direção
+                moves.push_back(Move(from_square, to_square));
+            }
+        }
+
+        queens &= queens - 1;  // Remove a dama processada do bitboard
+    }
     return moves;
 }
 
@@ -569,6 +689,10 @@ std::vector<Move> gen_all_moves(const Board& board) {
         // Gera movimentos para os bispos brancos e inclui no vetor
         buffer = gen_white_bishop_moves(board);
         all_moves.insert(all_moves.end(), buffer.begin(), buffer.end());
+
+        // Gera movimentos para as damas brancas e inclui no vetor
+        buffer = gen_white_queen_moves(board);
+        all_moves.insert(all_moves.end(), buffer.begin(), buffer.end());
     } else {
         // Gera movimentos para peões pretos e inclui no vetor
         buffer = gen_black_pawn_moves(board);
@@ -588,6 +712,10 @@ std::vector<Move> gen_all_moves(const Board& board) {
 
         // Gera movimentos para os bispos pretos e inclui no vetor
         buffer = gen_black_bishop_moves(board);
+        all_moves.insert(all_moves.end(), buffer.begin(), buffer.end());
+
+        // Gera movimentos para as damas pretas e inclui no vetor
+        buffer = gen_black_queen_moves(board);
         all_moves.insert(all_moves.end(), buffer.begin(), buffer.end());
     }
 
