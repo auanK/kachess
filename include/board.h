@@ -1,6 +1,7 @@
 #ifndef BOARD_H
 #define BOARD_H
 #include <cstdint>
+#include <vector>
 
 #include "move.h"
 
@@ -29,7 +30,7 @@ class Board {
 
     Board();
 
-    void print_board() const;
+    void print_board(const std::vector<int>& highlighted_squares = {}) const;
 
     void apply_move(const Move& move_to_apply);
 

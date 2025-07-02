@@ -1,34 +1,32 @@
 #include "board.h"
 
+#include <algorithm>
 #include <iostream>
+#include <vector>
 
+// Construtor da classe Board
 Board::Board() { init_board_state(); }
 
+// Inicializa o estado do tabuleiro com a posição inicial padrão do xadrez
 void Board::init_board_state() {
-    // Inicializando os bitboards para as peças
-    white_pawns = 0ULL;
-    black_pawns = 0ULL;
-    white_king = 0ULL;
-    black_king = 0ULL;
-    white_knights = 0ULL;
-    black_knights = 0ULL;
-    white_rooks = 0ULL;
-    black_rooks = 0ULL;
-
     // Configurando uma fileira de peões brancos
+    // Os peões brancos começam na fileira 2
+    // Correspondem aos índices 8 a 15
     // 00000000
     // 00000000
     // 00000000
     // 00000000
     // 00000000
     // 00000000
-    // 11111111  <- Peões brancos (fileira 2, casas 8 a 15)
+    // 11111111  <- Peças
     // 00000000
     white_pawns = 0x000000000000FF00ULL;
 
     // Configurando uma fileira de peões pretos
+    // Os peões pretos começam na fileira 7
+    // Correspondem aos índices 48 a 55
     // 00000000
-    // 11111111  <- Peões pretos (fileira 7, casas 48 a 55)
+    // 11111111  <- Peças
     // 00000000
     // 00000000
     // 00000000
@@ -39,7 +37,6 @@ void Board::init_board_state() {
 
     // Configurando o rei branco
     // O rei branco começa na casa e1, correspondente ao índice 4
-    // (1ULL << 4) cria um valor de 64 bits com o bit 4 definido como 1.
     // 00000000
     // 00000000
     // 00000000
@@ -47,12 +44,12 @@ void Board::init_board_state() {
     // 00000000
     // 00000000
     // 00000000
-    // 00010000  <- Rei branco (casa 4, fileira 1)
+    // 00010000  <- Peças
     white_king = (1ULL << 4);
 
     // Configurando o rei preto
     // O rei preto começa na casa e8, correspondente ao índice 60
-    // 00001000 <- Rei preto (casa 60, fileira 8)
+    // 00001000 <-  Peças
     // 00000000
     // 00000000
     // 00000000
@@ -64,6 +61,7 @@ void Board::init_board_state() {
 
     // Configurando os cavalos brancos
     // Os cavalos brancos começam nas casas b1 e g1
+    // Correspondem aos índices 1 e 6
     // 00000000
     // 00000000
     // 00000000
@@ -71,12 +69,13 @@ void Board::init_board_state() {
     // 00000000
     // 00000000
     // 00000000
-    // 01000010 <- Cavalos brancos (casas 1 e 6, fileira 1)
+    // 01000010 <-  Peças
     white_knights = (1ULL << 1) | (1ULL << 6);
 
     // Configurando os cavalos pretos
     // Os cavalos pretos começam nas casas b8 e g8
-    // 01000010 <- Cavalos pretos (casas 57 e 62, fileira 8)
+    // Correspondem aos índices 57 e 62
+    // 01000010 <- Peças
     // 00000000
     // 00000000
     // 00000000
@@ -88,6 +87,7 @@ void Board::init_board_state() {
 
     // Configurando as torres brancas
     // As torres brancas começam nas casas a1 e h1
+    // Correspondem aos índices 0 e 7
     // 00000000
     // 00000000
     // 00000000
@@ -95,12 +95,13 @@ void Board::init_board_state() {
     // 00000000
     // 00000000
     // 00000000
-    // 10000001 <- Torres brancas (casas 0 e 7, fileira 1)
+    // 10000001 <- Peças
     white_rooks = (1ULL << 0) | (1ULL << 7);
 
     // Configurando as torres pretas
     // As torres pretas começam nas casas a8 e h8
-    // 10000001 <- Torres pretas (casas 56 e 63, fileira 8)
+    // Correspondem aos índices 56 e 63
+    // 10000001 <- Peças
     // 00000000
     // 00000000
     // 00000000
@@ -112,6 +113,7 @@ void Board::init_board_state() {
 
     // Configurando os bispos brancos
     // Os bispos brancos começam nas casas c1 e f1
+    // Correspondem aos índices 2 e 5
     // 00000000
     // 00000000
     // 00000000
@@ -119,12 +121,13 @@ void Board::init_board_state() {
     // 00000000
     // 00000000
     // 00000000
-    // 00100100 <- Bispos brancos (casas 2 e 5, fileira 1)
+    // 00100100 <- Peças
     white_bishops = (1ULL << 2) | (1ULL << 5);
 
     // Configurando os bispos pretos
     // Os bispos pretos começam nas casas c8 e f8
-    // 00100100 <- Bispos pretos (casas 58 e 61, fileira 8)
+    // Correspondem aos índices 58 e 61
+    // 00100100 <- Peças
     // 00000000
     // 00000000
     // 00000000
@@ -135,7 +138,7 @@ void Board::init_board_state() {
     black_bishops = (1ULL << 58) | (1ULL << 61);
 
     // Configurando as rainhas brancas
-    // As rainhas brancas começam na casa d1
+    // As rainhas brancas começam na casa d1, correspondente ao índice 3
     // 00000000
     // 00000000
     // 00000000
@@ -143,12 +146,12 @@ void Board::init_board_state() {
     // 00000000
     // 00000000
     // 00000000
-    // 00001000 <- Rainha branca (casa 3, fileira 1)
+    // 00001000 <- Peças
     white_queens = (1ULL << 3);
 
     // Configurando as rainhas pretas
-    // As rainhas pretas começam na casa d8
-    // 00001000 <- Rainha preta (casa 59, fileira 8)
+    // As rainhas pretas começam na casa d8, correspondente ao índice 59
+    // 00001000 <- Peças
     // 00000000
     // 00000000
     // 00000000
@@ -181,7 +184,7 @@ void Board::apply_move(const Move& move_to_apply) {
     // Flag de sucesso do movimento
     bool piece_successfully_moved = false;
 
-    // Verifica de qual cor é o turno atual e aplica o movimento
+    // Verifica de qual cor é o turno atual e procura a peça na casa de origem
     if (turn == WHITE) {
         // Move um peão branco
         if (white_pawns & from_bit) {
@@ -301,7 +304,10 @@ void Board::apply_move(const Move& move_to_apply) {
 
 // Função temporária para imprimir o tabuleiro no console
 // Futuramente irei usar FEN para representar o estado do tabuleiro
-void Board::print_board() const {
+void Board::print_board(const std::vector<int>& highlighted_squares) const {
+    const std::string HIGHLIGHT_BG = "\033[42m";
+    const std::string RESET_COLOR = "\033[0m";
+
     std::cout << std::endl;
 
     for (int rank = 7; rank >= 0; --rank) {
@@ -337,6 +343,16 @@ void Board::print_board() const {
                 piece_char = 'q';
             }
 
+            bool is_highlighted =
+                !highlighted_squares.empty() &&
+                (std::find(highlighted_squares.begin(),
+                           highlighted_squares.end(),
+                           square_index) != highlighted_squares.end());
+
+            if (is_highlighted) {
+                std::cout << HIGHLIGHT_BG << piece_char << RESET_COLOR << " ";
+                continue;
+            }
             std::cout << piece_char << " ";
         }
         std::cout << std::endl;

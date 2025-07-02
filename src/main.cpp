@@ -37,14 +37,31 @@ int algebraic_to_square(const std::string& square_notation) {
 int main() {
     Board game_board;
     std::string user_input;
+    std::vector<int> highlighted_squares;
 
     while (true) {
-        game_board.print_board();
+        game_board.print_board(highlighted_squares);
+        highlighted_squares.clear();
+
         std::cout << "> ";
         std::cin >> user_input;
 
         if (user_input == "quit") {
             break;
+        }
+
+        if (user_input.length() == 2) {
+            int from_square = algebraic_to_square(user_input);
+            if (from_square != -1) {
+                std::vector<Move> legal_moves =
+                    MoveGen::gen_all_moves(game_board);
+                for (const Move& move : legal_moves) {
+                    if (move.from == from_square) {
+                        highlighted_squares.push_back(move.to);
+                    }
+                }
+            }
+            continue;
         }
 
         if (user_input.length() != 4) {

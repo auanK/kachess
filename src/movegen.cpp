@@ -4,7 +4,10 @@
 
 namespace MoveGen {
 
+// Tabela de ataques dos cavalos
 static uint64_t knight_attacks[64];
+
+// Flag de inicialização do knight_attacks
 static bool knight_attacks_ready = false;
 
 // Encontra o índice do bit menos significativo (LSB) em um bitboard
@@ -13,6 +16,7 @@ inline int get_lsb(uint64_t bb) {
     return __builtin_ctzll(bb);
 }
 
+// Inicializa a tabela de ataques dos cavalos
 void init_knight_attacks() {
     if (knight_attacks_ready) return;
 
@@ -37,7 +41,7 @@ void init_knight_attacks() {
     knight_attacks_ready = true;
 }
 
-// Retorna os movimentos possíveis para peões brancos
+// Gera todos os movimentos válidos para os peões brancos
 std::vector<Move> gen_white_pawn_moves(const Board& board) {
     std::vector<Move> moves;  // Vetor para armazenar os movimentos válidos
 
@@ -99,7 +103,7 @@ std::vector<Move> gen_white_pawn_moves(const Board& board) {
     return moves;
 }
 
-// Retorna os movimentos possíveis para peões pretos
+// Gera todos os movimentos válidos para os peões pretos
 std::vector<Move> gen_black_pawn_moves(const Board& board) {
     std::vector<Move> moves;  // Vetor para armazenar os movimentos válidos
 
@@ -161,7 +165,7 @@ std::vector<Move> gen_black_pawn_moves(const Board& board) {
     return moves;
 }
 
-// Retorna os movimentos possíveis para o rei branco
+// Gera todos os movimentos válidos para o rei branco
 std::vector<Move> gen_white_king_moves(const Board& board) {
     std::vector<Move> moves;  // Vetor para armazenar os movimentos válidos
 
@@ -201,7 +205,7 @@ std::vector<Move> gen_white_king_moves(const Board& board) {
     return moves;
 }
 
-// Retorna os movimentos possíveis para o rei preto
+// Gera todos os movimentos válidos para o rei preto
 std::vector<Move> gen_black_king_moves(const Board& board) {
     std::vector<Move> moves;
 
@@ -241,6 +245,7 @@ std::vector<Move> gen_black_king_moves(const Board& board) {
     return moves;
 }
 
+// Gera todos os movimentos válidos para os cavalos brancos
 std::vector<Move> gen_white_knight_moves(const Board& board) {
     std::vector<Move> moves;  // Vetor para armazenar os movimentos válidos
 
@@ -276,6 +281,7 @@ std::vector<Move> gen_white_knight_moves(const Board& board) {
     return moves;
 }
 
+// Gera todos os movimentos válidos para os cavalos pretos
 std::vector<Move> gen_black_knight_moves(const Board& board) {
     std::vector<Move> moves;
 
@@ -668,54 +674,44 @@ std::vector<Move> gen_all_moves(const Board& board) {
 
     init_knight_attacks();  // Inicializa os ataques dos cavalos,
 
-    // Gera movimentos para peões e reis, dependendo da cor do jogador
+    // Gera o movimento o vetor de movimentos possíveis para o jogador atual
+    // Calcula o vetor de cada conjunto de peças individualmente e adiciona no
+    // vetor geral após isso
     if (board.turn == WHITE) {
-        // Gera movimentos para peões brancos e inclui no vetor
-        buffer = gen_white_pawn_moves(board);
+        buffer = gen_white_pawn_moves(board);  // Peões brancos
         all_moves.insert(all_moves.end(), buffer.begin(), buffer.end());
 
-        // Gera movimentos para o rei branco e inclui no vetor
-        buffer = gen_white_king_moves(board);
+        buffer = gen_white_king_moves(board);  // Rei branco
         all_moves.insert(all_moves.end(), buffer.begin(), buffer.end());
 
-        // Gera movimentos para os cavalos brancos e inclui no vetor
-        buffer = gen_white_knight_moves(board);
+        buffer = gen_white_knight_moves(board);  // Cavalos brancos
         all_moves.insert(all_moves.end(), buffer.begin(), buffer.end());
 
-        // Gera movimentos para as torres brancas e inclui no vetor
-        buffer = gen_white_rook_moves(board);
+        buffer = gen_white_rook_moves(board);  // Torres brancas
         all_moves.insert(all_moves.end(), buffer.begin(), buffer.end());
 
-        // Gera movimentos para os bispos brancos e inclui no vetor
-        buffer = gen_white_bishop_moves(board);
+        buffer = gen_white_bishop_moves(board);  // Bispos brancos
         all_moves.insert(all_moves.end(), buffer.begin(), buffer.end());
 
-        // Gera movimentos para as damas brancas e inclui no vetor
-        buffer = gen_white_queen_moves(board);
+        buffer = gen_white_queen_moves(board);  // Damas brancas
         all_moves.insert(all_moves.end(), buffer.begin(), buffer.end());
     } else {
-        // Gera movimentos para peões pretos e inclui no vetor
-        buffer = gen_black_pawn_moves(board);
+        buffer = gen_black_pawn_moves(board);  // Peões pretos
         all_moves.insert(all_moves.end(), buffer.begin(), buffer.end());
 
-        // Gera movimentos para o rei preto e inclui no vetor
-        buffer = gen_black_king_moves(board);
+        buffer = gen_black_king_moves(board);  // Rei preto
         all_moves.insert(all_moves.end(), buffer.begin(), buffer.end());
 
-        // Gera movimentos para os cavalos pretos e inclui no vetor
-        buffer = gen_black_knight_moves(board);
+        buffer = gen_black_knight_moves(board);  // Cavalos pretos
         all_moves.insert(all_moves.end(), buffer.begin(), buffer.end());
 
-        // Gera movimentos para as torres pretas e inclui no vetor
-        buffer = gen_black_rook_moves(board);
+        buffer = gen_black_rook_moves(board);  // Torres pretas
         all_moves.insert(all_moves.end(), buffer.begin(), buffer.end());
 
-        // Gera movimentos para os bispos pretos e inclui no vetor
-        buffer = gen_black_bishop_moves(board);
+        buffer = gen_black_bishop_moves(board);  // Bispos pretos
         all_moves.insert(all_moves.end(), buffer.begin(), buffer.end());
 
-        // Gera movimentos para as damas pretas e inclui no vetor
-        buffer = gen_black_queen_moves(board);
+        buffer = gen_black_queen_moves(board);  // Damas pretas
         all_moves.insert(all_moves.end(), buffer.begin(), buffer.end());
     }
 
