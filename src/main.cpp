@@ -56,8 +56,8 @@ int main() {
                 std::vector<Move> legal_moves =
                     MoveGen::gen_all_moves(game_board);
                 for (const Move& move : legal_moves) {
-                    if (move.from == from_square) {
-                        highlighted_squares.push_back(move.to);
+                    if (move.from() == from_square) {
+                        highlighted_squares.push_back(move.to());
                     }
                 }
             }

@@ -174,8 +174,8 @@ void Board::init_board_state() {
 
 // Aplica um movimento no tabuleiro
 void Board::apply_move(const Move& move_to_apply) {
-    int from = move_to_apply.from;
-    int to = move_to_apply.to;
+    int from = move_to_apply.from();
+    int to = move_to_apply.to();
 
     // Cria uma máscara de bit para as casas de origem e destino
     uint64_t from_bit = (1ULL << from);
