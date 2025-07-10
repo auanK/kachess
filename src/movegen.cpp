@@ -132,8 +132,52 @@ std::vector<Move> gen_white_pawn_moves(const Board& board) {
     }
 
     /**
-     * Lógica para capturas, etc será adicionada aqui.
-     * */
+     * 3. Capturas Diagonais
+     */
+
+    // Máscara para evitar que um peão "dê a volta" na borda do tabuleiro
+    const uint64_t NOT_A_FILE = 0xFEFEFEFEFEFEFEFEULL;  // Exclui a coluna 'a'
+    const uint64_t NOT_H_FILE = 0x7F7F7F7F7F7F7F7FULL;  // Exclui a coluna 'h'
+
+    // Capturas para a direita (nordeste, delta +9)
+    // Primeiro, pegamos os peões que não estão na coluna 'h' e os deslocamos
+    // para o alvo do ataque.
+    uint64_t attack_targets_right = (board.white_pawns & NOT_H_FILE) << 9;
+    // Movimento só é válido se o alvo estiver ocupado por uma peça preta.
+    uint64_t valid_captures_right = attack_targets_right & board.black_occupied;
+
+    // Itera sobre os destinos válidos e adiciona os movimentos
+    // Enquanto houver bits '1' (movimentos válidos)
+    uint64_t remaining_captures = valid_captures_right;
+    while (remaining_captures) {
+        // Calcula o índice do destino e da origem
+        int to = get_lsb(remaining_captures);
+        int from = to - 9;
+
+        // Adiciona o movimento à lista e remove o bit processado
+        moves.push_back(Move(from, to));
+        remaining_captures &= remaining_captures - 1;
+    }
+
+    // Capturas para a esquerda (noroeste, delta +7)
+    // Primeiro, pegamos os peões que não estão na coluna 'a' e os deslocamos
+    // para o alvo do ataque.
+    uint64_t attack_targets_left = (board.white_pawns & NOT_A_FILE) << 7;
+    // Movimento só é válido se o alvo estiver ocupado por uma peça preta.
+    uint64_t valid_captures_left = attack_targets_left & board.black_occupied;
+
+    // Itera sobre os destinos válidos e adiciona os movimentos
+    // Enquanto houver bits '1' (movimentos válidos)
+    remaining_captures = valid_captures_left;
+    while (remaining_captures) {
+        // Calcula o índice do destino e da origem
+        int to = get_lsb(remaining_captures);
+        int from = to - 7;
+
+        // Adiciona o movimento à lista e remove o bit processado
+        moves.push_back(Move(from, to));
+        remaining_captures &= remaining_captures - 1;
+    }
 
     return moves;
 }
@@ -194,8 +238,49 @@ std::vector<Move> gen_black_pawn_moves(const Board& board) {
     }
 
     /**
-     * Lógica para capturas, etc será adicionada aqui.
-     * */
+     * 3. Capturas Diagonais
+     */
+
+    // Máscara para evitar que um peão "dê a volta" na borda do tabuleiro
+    const uint64_t NOT_A_FILE = 0xFEFEFEFEFEFEFEFEULL;  // Exclui a coluna 'a'
+    const uint64_t NOT_H_FILE = 0x7F7F7F7F7F7F7F7FULL;  // Exclui a coluna 'h'
+
+    // Capturas para a esquerda (sudoeste, delta -9)
+    // Primeiro, pegamos os peões que não estão na coluna 'a' e os deslocamos
+    // para o alvo do ataque.
+    uint64_t attack_targets_left = (board.black_pawns & NOT_A_FILE) >> 9;
+    // Movimento só é válido se o alvo estiver ocupado por uma peça branca.
+    uint64_t valid_captures_left = attack_targets_left & board.white_occupied;
+
+    // Itera sobre os destinos válidos e adiciona os movimentos
+    // Enquanto houver bits '1' (movimentos válidos)
+    uint64_t remaining_captures = valid_captures_left;
+    while (remaining_captures) {
+        // Calcula o índice do destino e da origem
+        int to = get_lsb(remaining_captures);
+        int from = to + 9;
+
+        // Adiciona o movimento à lista e remove o bit processado
+        moves.push_back(Move(from, to));
+    }
+
+    // Capturas para a direita (sudeste, delta -7)
+    uint64_t attack_targets_right = (board.black_pawns & NOT_H_FILE) >> 7;
+    // Movimento só é válido se o alvo estiver ocupado por uma peça branca.
+    uint64_t valid_captures_right = attack_targets_right & board.white_occupied;
+
+    // Itera sobre os destinos válidos e adiciona os movimentos
+    // Enquanto houver bits '1' (movimentos válidos)
+    remaining_captures = valid_captures_right;
+    while (remaining_captures) {
+        // Calcula o índice do destino e da origem
+        int to = get_lsb(remaining_captures);
+        int from = to + 7;
+
+        // Adiciona o movimento à lista e remove o bit processado
+        moves.push_back(Move(from, to));
+        remaining_captures &= remaining_captures - 1;
+    }
 
     return moves;
 }

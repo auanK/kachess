@@ -181,6 +181,45 @@ void Board::apply_move(const Move& move_to_apply) {
     uint64_t from_bit = (1ULL << from);
     uint64_t to_bit = (1ULL << to);
 
+    // Pega o bitboard de ocupação do oponente
+    uint64_t opponent_occupied =
+        (turn == WHITE) ? black_occupied : white_occupied;
+
+    // Se a casa de destino está ocupada por uma peça do oponente,
+    // é uma captura.
+    if (opponent_occupied & to_bit) {
+        // Percore os bitboards das peças pretas para remover a peça capturada
+        if (turn == WHITE) {
+            if (black_pawns & to_bit) {
+                black_pawns &= ~to_bit;
+            } else if (black_knights & to_bit) {
+                black_knights &= ~to_bit;
+            } else if (black_bishops & to_bit) {
+                black_bishops &= ~to_bit;
+            } else if (black_rooks & to_bit) {
+                black_rooks &= ~to_bit;
+            } else if (black_queens & to_bit) {
+                black_queens &= ~to_bit;
+            }
+            black_occupied &= ~to_bit;  // Atualiza o bitboard de ocupação
+        }
+        // Percore os bitboards das peças brancas para remover a peça capturada
+        else {
+            if (white_pawns & to_bit) {
+                white_pawns &= ~to_bit;
+            } else if (white_knights & to_bit) {
+                white_knights &= ~to_bit;
+            } else if (white_bishops & to_bit) {
+                white_bishops &= ~to_bit;
+            } else if (white_rooks & to_bit) {
+                white_rooks &= ~to_bit;
+            } else if (white_queens & to_bit) {
+                white_queens &= ~to_bit;
+            }
+            white_occupied &= ~to_bit;  //  Atualiza o bitboard de ocupação
+        }
+    }
+
     // Flag de sucesso do movimento
     bool piece_successfully_moved = false;
 
