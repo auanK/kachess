@@ -37,7 +37,7 @@ class Board {
 
     
     void make_move(const Move& move_to_apply);
-    void unmake_move();
+    void undo_move();
 
     void print_board(const std::vector<int>& highlighted_squares = {}) const;
     void print_history() const;

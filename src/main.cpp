@@ -55,7 +55,7 @@ int main() {
             int from_square = algebraic_to_square(user_input);
             if (from_square != -1) {
                 std::vector<Move> legal_moves =
-                    MoveGen::gen_all_moves(game_board);
+                    MoveGen::gen_legal_moves(game_board);
                 for (const Move& move : legal_moves) {
                     if (move.from() == from_square) {
                         highlighted_squares.push_back(move.to());
@@ -82,7 +82,7 @@ int main() {
         Move user_move(from_square, to_square);
         bool is_valid_move = false;
 
-        std::vector<Move> legal_moves = MoveGen::gen_all_moves(game_board);
+        std::vector<Move> legal_moves = MoveGen::gen_legal_moves(game_board);
 
         for (const Move& legal_mv : legal_moves) {
             if (user_move == legal_mv) {

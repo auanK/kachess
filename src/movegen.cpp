@@ -76,6 +76,108 @@ void init_knight_attacks() {
     }
 }
 
+// Verifica se uma casa está atacada por alguma peça do atacante
+bool is_square_attacked(int square, Color attacker, const Board& board) {
+    // Verifica ataques de Peões
+    const uint64_t NOT_A_FILE = 0xFEFEFEFEFEFEFEFEULL;  // Exclui a coluna 'a'
+    const uint64_t NOT_H_FILE = 0x7F7F7F7F7F7F7F7FULL;  // Exclui a coluna 'h'
+
+    // Obtém o bitboard de peões do atacante
+    const uint64_t pawns =
+        (attacker == WHITE) ? board.white_pawns : board.black_pawns;
+
+    // Peões brancos
+    if (attacker == WHITE) {
+        if ((1ULL << square) &
+            (((pawns & NOT_H_FILE) << 9) | ((pawns & NOT_A_FILE) << 7))) {
+            return true;
+        }
+    }
+    // Peões pretos
+    else {
+        if ((1ULL << square) &
+            (((pawns & NOT_A_FILE) >> 9) | ((pawns & NOT_H_FILE) >> 7))) {
+            return true;
+        }
+    }
+
+    // Obtém o bitboard de cavalos do atacante e verifica a tabela de ataques
+    // pré-calculada dos cavalos
+    const uint64_t knights =
+        (attacker == WHITE) ? board.white_knights : board.black_knights;
+    if (knight_attacks[square] & knights) return true;
+
+    // Obtém o bitboard do rei do atacante e verifica a tabela de ataques
+    // pré-calculada do rei
+    const uint64_t king =
+        (attacker == WHITE) ? board.white_king : board.black_king;
+    if (king_attacks[square] & king) return true;
+
+    // Obtém um bitboard que é a união de todas as peças deslizantes horizontais
+    // e verticais do atacante (torres e damas)
+    const uint64_t straight_sliders =
+        ((attacker == WHITE) ? board.white_rooks : board.black_rooks) |
+        ((attacker == WHITE) ? board.white_queens : board.black_queens);
+
+    // Verifica ataques de peças deslizantes horizontais e verticais
+    // Itera sobre as 4 direções possíveis (norte, sul, leste, oeste)
+    const int straight_deltas[4] = {8, -8, 1, -1};
+    for (int delta : straight_deltas) {
+        int current_square = square;
+        while (true) {
+            current_square += delta;  // Desliza na direção do delta
+
+            // Se ultrapassar os limites do tabuleiro, sai do loop
+            if (current_square < 0 || current_square >= 64) break;
+
+            // Verificação de "wrap-around" para movimentos horizontais
+            if ((delta == 1 || delta == -1) &&
+                (current_square / 8 != square / 8))
+                break;
+
+            // Cria uma máscara de bit para a casa atual
+            // e verifica se é atacada por uma peça deslizante
+            uint64_t current_bit = (1ULL << current_square);
+            if (straight_sliders & current_bit) return true;
+            if (board.all_occupied & current_bit) break;
+        }
+    }
+
+    // Obtém um bitboard que é a união de todas as peças deslizantes
+    // diagonais do atacante (bispos e damas)
+    const uint64_t diagonal_sliders =
+        ((attacker == WHITE) ? board.white_bishops : board.black_bishops) |
+        ((attacker == WHITE) ? board.white_queens : board.black_queens);
+
+    // Verifica ataques de peças deslizantes diagonais
+    // Itera sobre as 4 direções diagonais possíveis (noroeste, nordeste,
+    // sudoeste, sudeste)
+    const int diagonal_deltas[4] = {7, 9, -9, -7};
+    for (int delta : diagonal_deltas) {
+        int current_square = square;
+        while (true) {
+            current_square += delta;  // Desliza na direção do delta
+
+            // Se ultrapassar os limites do tabuleiro, sai do loop
+            if (current_square < 0 || current_square >= 64) break;
+
+            // Verificação de "wrap-around" para movimentos diagonais
+            int from_file = (current_square - delta) % 8;
+            int to_file = current_square % 8;
+            if (std::abs(from_file - to_file) != 1) break;
+
+            // Cria uma máscara de bit para a casa atual
+            // e verifica se é atacada por uma peça deslizante diagonal
+            uint64_t current_bit = (1ULL << current_square);
+            if (diagonal_sliders & current_bit) return true;
+            if (board.all_occupied & current_bit) break;
+        }
+    }
+
+    // Se nenhuma das verificações encontrou um ataque, a casa está segura.
+    return false;
+}
+
 // Gera todos os movimentos válidos para os peões brancos
 std::vector<Move> gen_white_pawn_moves(const Board& board) {
     std::vector<Move> moves;  // Vetor para armazenar os movimentos válidos
@@ -825,6 +927,39 @@ std::vector<Move> gen_all_moves(const Board& board) {
     }
 
     return all_moves;
+}
+
+std::vector<Move> gen_legal_moves(Board& board) {
+    std::vector<Move> legal_moves;  // Guarda todos os movimentos legais
+
+    // Gera todos os movimentos pseudo-legais para o jogador atual.
+    std::vector<Move> pseudo_moves = gen_all_moves(board);
+
+    // Cor da do jogador que está movendo
+    const Color moving_player_color = board.turn;
+
+    // Itera sobre cada movimento pseudo-legal.
+    for (const Move& move : pseudo_moves) {
+        // Faz o movimento no tabuleiro.
+        board.make_move(move);
+
+        // Salva o estado do rei do jogador que moveu.
+        const uint64_t king_bitboard = (moving_player_color == WHITE)
+                                           ? board.white_king
+                                           : board.black_king;
+        const int king_square = get_lsb(king_bitboard);
+
+        // Se o rei não estiver atacado após o movimento,
+        // adiciona o movimento à lista de movimentos legais.
+        if (!is_square_attacked(king_square, board.turn, board)) {
+            legal_moves.push_back(move);
+        }
+
+        // Desfaz o movimento e segue para o próximo movimento.
+        board.undo_move();
+    }
+
+    return legal_moves;
 }
 
 }  // namespace MoveGen

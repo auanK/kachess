@@ -267,7 +267,7 @@ void Board::make_move(const Move& move_to_apply) {
 }
 
 // Desfaz o último movimento aplicado no tabuleiro
-void Board::unmake_move() {
+void Board::undo_move() {
     // Se não houver histórico, não há nada para desfazer
     if (history.empty()) {
         return;

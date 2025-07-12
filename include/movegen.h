@@ -7,7 +7,9 @@
 #include "move.h"
 
 namespace MoveGen {
-
+    
+bool is_square_attacked(int square, Color attacker, const Board& board);
+    
 std::vector<Move> gen_white_pawn_moves(const Board& board);
 std::vector<Move> gen_white_king_moves(const Board& board);
 std::vector<Move> gen_black_pawn_moves(const Board& board);
@@ -22,6 +24,8 @@ std::vector<Move> gen_white_queen_moves(const Board& board);
 std::vector<Move> gen_black_queen_moves(const Board& board);
 
 std::vector<Move> gen_all_moves(const Board& board);
+std::vector<Move> gen_legal_moves(Board& board);
+
 
 }  // namespace MoveGen
 
