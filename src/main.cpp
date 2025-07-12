@@ -41,6 +41,7 @@ int main() {
 
     while (true) {
         game_board.print_board(highlighted_squares);
+        game_board.print_history();
         highlighted_squares.clear();
 
         std::cout << "> ";
@@ -91,7 +92,7 @@ int main() {
         }
 
         if (is_valid_move) {
-            game_board.apply_move(user_move);
+            game_board.make_move(user_move);
         }
     }
 

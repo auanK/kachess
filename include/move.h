@@ -3,6 +3,9 @@
 
 #include <cstdint>
 
+// Enum para os tipos de peças.
+enum PieceType { NONE, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING };
+
 // Enum para as peças de promoção.
 enum PromotionType {
     PROMO_KNIGHT = 0,  // 00
@@ -33,13 +36,13 @@ class Move {
     // - to: casa de destino (0-63)
     // - move_type: tipo de movimento (MoveType::PROMOTION, etc.)
     // - promo_type: tipo de peça para promoção
-    Move(int from, int to, int move_type = MoveType::NORMAL,
-         int promo_type = 0) {
-        data = (to & 0x3F)                    // 6 bits para a casa de destino
-               | ((from & 0x3F) << 6)         // 6 bits para a casa de origem
-               | ((move_type & 0x3) << 12)    // 2 bits para o tipo de movimento
-               | ((promo_type & 0x3) << 14);  // 2 bits para o tipo de promoção
-    }
+    Move(int from, int to, int move_type = MoveType::NORMAL, int promo_type = 0)
+        : data((to & 0x3F)                   // 6 bits para a casa de destino
+               | ((from & 0x3F) << 6)        // 6 bits para a casa de origem
+               | ((move_type & 0x3) << 12)   // 2 bits para o tipo de movimento
+               | ((promo_type & 0x3) << 14)  // 2 bits para o tipo de promoção)
+
+          ) {};
 
     // Retorna a casa de origem do movimento.
     inline int from() const { return (data >> 6) & 0x3F; }

@@ -7,6 +7,11 @@
 
 enum Color { WHITE, BLACK };
 
+struct UndoInfo {
+    Move move;
+    PieceType captured_piece;
+};
+
 class Board {
    public:
     uint64_t white_pawns;
@@ -30,12 +35,17 @@ class Board {
 
     Board();
 
-    void print_board(const std::vector<int>& highlighted_squares = {}) const;
+    
+    void make_move(const Move& move_to_apply);
+    void unmake_move();
 
-    void apply_move(const Move& move_to_apply);
+    void print_board(const std::vector<int>& highlighted_squares = {}) const;
+    void print_history() const;
 
    private:
     void init_board_state();
+
+    std::vector<UndoInfo> history;
 };
 
 #endif

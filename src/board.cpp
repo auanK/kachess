@@ -9,155 +9,85 @@ Board::Board() { init_board_state(); }
 
 // Inicializa o estado do tabuleiro com a posição inicial padrão do xadrez
 void Board::init_board_state() {
-    // Configurando uma fileira de peões brancos
     // Os peões brancos começam na fileira 2
     // Correspondem aos índices 8 a 15
     // 00000000
-    // 00000000
-    // 00000000
-    // 00000000
-    // 00000000
-    // 00000000
+    // ...
     // 11111111  <- Peças
     // 00000000
     white_pawns = 0x000000000000FF00ULL;
 
-    // Configurando uma fileira de peões pretos
     // Os peões pretos começam na fileira 7
     // Correspondem aos índices 48 a 55
     // 00000000
     // 11111111  <- Peças
-    // 00000000
-    // 00000000
-    // 00000000
-    // 00000000
-    // 00000000
+    // ...
     // 00000000
     black_pawns = 0x00FF000000000000ULL;
 
-    // Configurando o rei branco
     // O rei branco começa na casa e1, correspondente ao índice 4
     // 00000000
-    // 00000000
-    // 00000000
-    // 00000000
-    // 00000000
-    // 00000000
-    // 00000000
+    // ...
     // 00010000  <- Peças
     white_king = (1ULL << 4);
 
-    // Configurando o rei preto
     // O rei preto começa na casa e8, correspondente ao índice 60
     // 00001000 <-  Peças
-    // 00000000
-    // 00000000
-    // 00000000
-    // 00000000
-    // 00000000
-    // 00000000
+    // ...
     // 00000000
     black_king = (1ULL << 60);
 
-    // Configurando os cavalos brancos
     // Os cavalos brancos começam nas casas b1 e g1
     // Correspondem aos índices 1 e 6
     // 00000000
-    // 00000000
-    // 00000000
-    // 00000000
-    // 00000000
-    // 00000000
-    // 00000000
+    // ...
     // 01000010 <-  Peças
     white_knights = (1ULL << 1) | (1ULL << 6);
 
-    // Configurando os cavalos pretos
     // Os cavalos pretos começam nas casas b8 e g8
     // Correspondem aos índices 57 e 62
     // 01000010 <- Peças
-    // 00000000
-    // 00000000
-    // 00000000
-    // 00000000
-    // 00000000
-    // 00000000
+    // ...
     // 00000000
     black_knights = (1ULL << 57) | (1ULL << 62);
 
-    // Configurando as torres brancas
     // As torres brancas começam nas casas a1 e h1
     // Correspondem aos índices 0 e 7
     // 00000000
-    // 00000000
-    // 00000000
-    // 00000000
-    // 00000000
-    // 00000000
-    // 00000000
+    // ...
     // 10000001 <- Peças
     white_rooks = (1ULL << 0) | (1ULL << 7);
 
-    // Configurando as torres pretas
     // As torres pretas começam nas casas a8 e h8
     // Correspondem aos índices 56 e 63
     // 10000001 <- Peças
-    // 00000000
-    // 00000000
-    // 00000000
-    // 00000000
-    // 00000000
-    // 00000000
+    // ...
     // 00000000
     black_rooks = (1ULL << 56) | (1ULL << 63);
 
-    // Configurando os bispos brancos
     // Os bispos brancos começam nas casas c1 e f1
     // Correspondem aos índices 2 e 5
     // 00000000
-    // 00000000
-    // 00000000
-    // 00000000
-    // 00000000
-    // 00000000
-    // 00000000
+    // ...
     // 00100100 <- Peças
     white_bishops = (1ULL << 2) | (1ULL << 5);
 
-    // Configurando os bispos pretos
     // Os bispos pretos começam nas casas c8 e f8
     // Correspondem aos índices 58 e 61
     // 00100100 <- Peças
-    // 00000000
-    // 00000000
-    // 00000000
-    // 00000000
-    // 00000000
-    // 00000000
+    // ...
     // 00000000
     black_bishops = (1ULL << 58) | (1ULL << 61);
 
-    // Configurando as rainhas brancas
     // As rainhas brancas começam na casa d1, correspondente ao índice 3
     // 00000000
-    // 00000000
-    // 00000000
-    // 00000000
-    // 00000000
-    // 00000000
-    // 00000000
+    // ...
     // 00001000 <- Peças
     white_queens = (1ULL << 3);
 
-    // Configurando as rainhas pretas
     // As rainhas pretas começam na casa d8, correspondente ao índice 59
     // 00001000 <- Peças
-    // 00000000
-    // 00000000
-    // 00000000
-    // 00000000
-    // 00000000
-    // 00000000
+    // ...
     // 00000000
     black_queens = (1ULL << 59);
 
@@ -173,172 +103,327 @@ void Board::init_board_state() {
 }
 
 // Aplica um movimento no tabuleiro
-void Board::apply_move(const Move& move_to_apply) {
-    int from = move_to_apply.from();
-    int to = move_to_apply.to();
+void Board::make_move(const Move& move_to_apply) {
+    // Cria uma máscara de bit para a casa de origem e destino
+    const uint64_t from_bit = (1ULL << move_to_apply.from());
+    const uint64_t to_bit = (1ULL << move_to_apply.to());
 
-    // Cria uma máscara de bit para as casas de origem e destino
-    uint64_t from_bit = (1ULL << from);
-    uint64_t to_bit = (1ULL << to);
+    // Salva o tipo de peça que está se movendo
+    PieceType moving_piece = NONE;
+    if (turn == WHITE) {
+        if (white_pawns & from_bit) {
+            moving_piece = PAWN;
+        } else if (white_knights & from_bit) {
+            moving_piece = KNIGHT;
+        } else if (white_bishops & from_bit) {
+            moving_piece = BISHOP;
+        } else if (white_rooks & from_bit) {
+            moving_piece = ROOK;
+        } else if (white_queens & from_bit) {
+            moving_piece = QUEEN;
+        } else if (white_king & from_bit) {
+            moving_piece = KING;
+        }
+    } else {
+        if (black_pawns & from_bit) {
+            moving_piece = PAWN;
+        } else if (black_knights & from_bit) {
+            moving_piece = KNIGHT;
+        } else if (black_bishops & from_bit) {
+            moving_piece = BISHOP;
+        } else if (black_rooks & from_bit) {
+            moving_piece = ROOK;
+        } else if (black_queens & from_bit) {
+            moving_piece = QUEEN;
+        } else if (black_king & from_bit) {
+            moving_piece = KING;
+        }
+    }
+
+    // Nenhuma peça do jogador atual na casa de origem, não pode mover
+    if (moving_piece == NONE) {
+        std::cerr << "Erro: Movimento inválido. Nenhuma peça do jogador atual "
+                     "na casa de origem."
+                  << std::endl;
+        return;
+    }
+
+    // Prepara a informação para desfazer o movimento
+    UndoInfo undo;
+    undo.move = move_to_apply;
+    undo.captured_piece = NONE;
 
     // Pega o bitboard de ocupação do oponente
-    uint64_t opponent_occupied =
+    const uint64_t opponent_occupied =
         (turn == WHITE) ? black_occupied : white_occupied;
 
     // Se a casa de destino está ocupada por uma peça do oponente,
     // é uma captura.
     if (opponent_occupied & to_bit) {
-        // Percore os bitboards das peças pretas para remover a peça capturada
+        // Percorre os bitboards das peças pretas para remover e salvar o tipo
+        // da peça capturada.
         if (turn == WHITE) {
             if (black_pawns & to_bit) {
+                undo.captured_piece = PAWN;
                 black_pawns &= ~to_bit;
             } else if (black_knights & to_bit) {
+                undo.captured_piece = KNIGHT;
                 black_knights &= ~to_bit;
             } else if (black_bishops & to_bit) {
+                undo.captured_piece = BISHOP;
                 black_bishops &= ~to_bit;
             } else if (black_rooks & to_bit) {
+                undo.captured_piece = ROOK;
                 black_rooks &= ~to_bit;
             } else if (black_queens & to_bit) {
+                undo.captured_piece = QUEEN;
                 black_queens &= ~to_bit;
             }
             black_occupied &= ~to_bit;  // Atualiza o bitboard de ocupação
         }
-        // Percore os bitboards das peças brancas para remover a peça capturada
+        // Percorre os bitboards das peças brancas para remover e salvar o tipo
+        // da peça capturada.
         else {
             if (white_pawns & to_bit) {
+                undo.captured_piece = PAWN;
                 white_pawns &= ~to_bit;
             } else if (white_knights & to_bit) {
+                undo.captured_piece = KNIGHT;
                 white_knights &= ~to_bit;
             } else if (white_bishops & to_bit) {
+                undo.captured_piece = BISHOP;
                 white_bishops &= ~to_bit;
             } else if (white_rooks & to_bit) {
+                undo.captured_piece = ROOK;
                 white_rooks &= ~to_bit;
             } else if (white_queens & to_bit) {
+                undo.captured_piece = QUEEN;
                 white_queens &= ~to_bit;
             }
             white_occupied &= ~to_bit;  //  Atualiza o bitboard de ocupação
         }
     }
 
-    // Flag de sucesso do movimento
-    bool piece_successfully_moved = false;
+    // Guarda o movimento no histórico
+    history.push_back(undo);
 
-    // Verifica de qual cor é o turno atual e procura a peça na casa de origem
+    // Move a peça do jogador atual da casa de origem para a casa de destino e
+    // atualiza o bitboard de ocupação dele.
     if (turn == WHITE) {
-        // Move um peão branco
-        if (white_pawns & from_bit) {
-            white_pawns &= ~from_bit;
-            white_pawns |= to_bit;
-            white_occupied &= ~from_bit;
-            white_occupied |= to_bit;
-            piece_successfully_moved = true;
+        switch (moving_piece) {
+            case PAWN:
+                white_pawns ^= (from_bit | to_bit);
+                break;
+            case KNIGHT:
+                white_knights ^= (from_bit | to_bit);
+                break;
+            case BISHOP:
+                white_bishops ^= (from_bit | to_bit);
+                break;
+            case ROOK:
+                white_rooks ^= (from_bit | to_bit);
+                break;
+            case QUEEN:
+                white_queens ^= (from_bit | to_bit);
+                break;
+            case KING:
+                white_king ^= (from_bit | to_bit);
+                break;
+            case NONE:
+                break;
         }
-        // Move o rei branco
-        else if (white_king & from_bit) {
-            white_king &= ~from_bit;
-            white_king |= to_bit;
-            white_occupied &= ~from_bit;
-            white_occupied |= to_bit;
-            piece_successfully_moved = true;
-        }
-        // Move um cavalo branco
-        else if (white_knights & from_bit) {
-            white_knights &= ~from_bit;
-            white_knights |= to_bit;
-            white_occupied &= ~from_bit;
-            white_occupied |= to_bit;
-            piece_successfully_moved = true;
-        }
-        // Move uma torre branca
-        else if (white_rooks & from_bit) {
-            white_rooks &= ~from_bit;
-            white_rooks |= to_bit;
-            white_occupied &= ~from_bit;
-            white_occupied |= to_bit;
-            piece_successfully_moved = true;
-        }
-        // Move um bispo branco
-        else if (white_bishops & from_bit) {
-            white_bishops &= ~from_bit;
-            white_bishops |= to_bit;
-            white_occupied &= ~from_bit;
-            white_occupied |= to_bit;
-            piece_successfully_moved = true;
-        }
-        // Move uma rainha branca
-        else if (white_queens & from_bit) {
-            white_queens &= ~from_bit;
-            white_queens |= to_bit;
-            white_occupied &= ~from_bit;
-            white_occupied |= to_bit;
-            piece_successfully_moved = true;
-        }
+        white_occupied ^= (from_bit | to_bit);
     } else {
-        // Move um peão preto
-        if (black_pawns & from_bit) {
-            black_pawns &= ~from_bit;
-            black_pawns |= to_bit;
-            black_occupied &= ~from_bit;
-            black_occupied |= to_bit;
-            piece_successfully_moved = true;
+        switch (moving_piece) {
+            case PAWN:
+                black_pawns ^= (from_bit | to_bit);
+                break;
+            case KNIGHT:
+                black_knights ^= (from_bit | to_bit);
+                break;
+            case BISHOP:
+                black_bishops ^= (from_bit | to_bit);
+                break;
+            case ROOK:
+                black_rooks ^= (from_bit | to_bit);
+                break;
+            case QUEEN:
+                black_queens ^= (from_bit | to_bit);
+                break;
+            case KING:
+                black_king ^= (from_bit | to_bit);
+                break;
+            case NONE:
+                break;
         }
-        // Move o rei preto
-        else if (black_king & from_bit) {
-            black_king &= ~from_bit;
-            black_king |= to_bit;
-            black_occupied &= ~from_bit;
-            black_occupied |= to_bit;
-            piece_successfully_moved = true;
-        }
-        // Move um cavalo preto
-        else if (black_knights & from_bit) {
-            black_knights &= ~from_bit;
-            black_knights |= to_bit;
-            black_occupied &= ~from_bit;
-            black_occupied |= to_bit;
-            piece_successfully_moved = true;
-        }
-        // Move uma torre preta
-        else if (black_rooks & from_bit) {
-            black_rooks &= ~from_bit;
-            black_rooks |= to_bit;
-            black_occupied &= ~from_bit;
-            black_occupied |= to_bit;
-            piece_successfully_moved = true;
-        }
-        // Move um bispo preto
-        else if (black_bishops & from_bit) {
-            black_bishops &= ~from_bit;
-            black_bishops |= to_bit;
-            black_occupied &= ~from_bit;
-            black_occupied |= to_bit;
-            piece_successfully_moved = true;
-        }
-        // Move uma rainha preta
-        else if (black_queens & from_bit) {
-            black_queens &= ~from_bit;
-            black_queens |= to_bit;
-            black_occupied &= ~from_bit;
-            black_occupied |= to_bit;
-            piece_successfully_moved = true;
-        }
+        black_occupied ^= (from_bit | to_bit);
     }
 
-    // Caso o movimento não tenha sido bem-sucedido, mostra uma mensagem de erro
-    // no console (Em um fluxo normal, isso não deveria acontecer, as
-    // verificações de validade devem ser feitas antes de chamar apply_move)
-    if (!piece_successfully_moved) {
-        std::cerr
-            << "Movimento inválido: peça não encontrada na casa de origem."
-            << std::endl;
-        return;
-    }
-
-    // Atualiza o bitboard de ocupação
+    // Atualiza o bitboard de ocupação total
     all_occupied = white_occupied | black_occupied;
 
     // Alterna o turno
     turn = (turn == WHITE) ? BLACK : WHITE;
+}
+
+// Desfaz o último movimento aplicado no tabuleiro
+void Board::unmake_move() {
+    // Se não houver histórico, não há nada para desfazer
+    if (history.empty()) {
+        return;
+    }
+
+    // Salvo o último movimento e o remove do histórico
+    UndoInfo last_undo = history.back();
+    history.pop_back();
+
+    // Cria uma máscara de bit para a casa de origem e destino do movimento
+    // que estamos desfazendo
+    const uint64_t from_bit = (1ULL << last_undo.move.from());
+    const uint64_t to_bit = (1ULL << last_undo.move.to());
+
+    // Troca o turno de volta para o jogador que fez o movimento
+    turn = (turn == WHITE) ? BLACK : WHITE;
+
+    // Salva o tipo da peça que foi movida. (peça está na casa de destino)
+    PieceType moved_piece = NONE;
+    if (turn == WHITE) {
+        if (white_pawns & to_bit) {
+            moved_piece = PAWN;
+        } else if (white_knights & to_bit) {
+            moved_piece = KNIGHT;
+        } else if (white_bishops & to_bit) {
+            moved_piece = BISHOP;
+        } else if (white_rooks & to_bit) {
+            moved_piece = ROOK;
+        } else if (white_queens & to_bit) {
+            moved_piece = QUEEN;
+        } else if (white_king & to_bit) {
+            moved_piece = KING;
+        }
+    } else {
+        if (black_pawns & to_bit) {
+            moved_piece = PAWN;
+        } else if (black_knights & to_bit) {
+            moved_piece = KNIGHT;
+        } else if (black_bishops & to_bit) {
+            moved_piece = BISHOP;
+        } else if (black_rooks & to_bit) {
+            moved_piece = ROOK;
+        } else if (black_queens & to_bit) {
+            moved_piece = QUEEN;
+        } else if (black_king & to_bit) {
+            moved_piece = KING;
+        }
+    }
+
+    // Move a peça de volta para a casa de origem e atualiza os bitboards
+    if (turn == WHITE) {
+        switch (moved_piece) {
+            case PAWN:
+                white_pawns ^= (from_bit | to_bit);
+                break;
+            case KNIGHT:
+                white_knights ^= (from_bit | to_bit);
+                break;
+            case BISHOP:
+                white_bishops ^= (from_bit | to_bit);
+                break;
+            case ROOK:
+                white_rooks ^= (from_bit | to_bit);
+                break;
+            case QUEEN:
+                white_queens ^= (from_bit | to_bit);
+                break;
+            case KING:
+                white_king ^= (from_bit | to_bit);
+                break;
+            case NONE:
+                break;
+        }
+        white_occupied ^= (from_bit | to_bit);
+    } else {
+        switch (moved_piece) {
+            case PAWN:
+                black_pawns ^= (from_bit | to_bit);
+                break;
+            case KNIGHT:
+                black_knights ^= (from_bit | to_bit);
+                break;
+            case BISHOP:
+                black_bishops ^= (from_bit | to_bit);
+                break;
+            case ROOK:
+                black_rooks ^= (from_bit | to_bit);
+                break;
+            case QUEEN:
+                black_queens ^= (from_bit | to_bit);
+                break;
+            case KING:
+                black_king ^= (from_bit | to_bit);
+                break;
+            case NONE:
+                break;
+        }
+        black_occupied ^= (from_bit | to_bit);
+    }
+
+    // Restaura a peça capturada, se houver
+    if (last_undo.captured_piece != NONE) {
+        const Color opponent_color = (turn == WHITE) ? BLACK : WHITE;
+        if (opponent_color == WHITE) {
+            switch (last_undo.captured_piece) {
+                case PAWN:
+                    white_pawns |= to_bit;
+                    break;
+                case KNIGHT:
+                    white_knights |= to_bit;
+                    break;
+                case BISHOP:
+                    white_bishops |= to_bit;
+                    break;
+                case ROOK:
+                    white_rooks |= to_bit;
+                    break;
+                case QUEEN:
+                    white_queens |= to_bit;
+                    break;
+                case KING:
+                    white_king |= to_bit;
+                    break;
+                case NONE:
+                    break;
+            }
+            white_occupied |= to_bit;
+        } else {
+            switch (last_undo.captured_piece) {
+                case PAWN:
+                    black_pawns |= to_bit;
+                    break;
+                case KNIGHT:
+                    black_knights |= to_bit;
+                    break;
+                case BISHOP:
+                    black_bishops |= to_bit;
+                    break;
+                case ROOK:
+                    black_rooks |= to_bit;
+                    break;
+                case QUEEN:
+                    black_queens |= to_bit;
+                    break;
+                case KING:
+                    black_king |= to_bit;
+                    break;
+                case NONE:
+                    break;
+            }
+            black_occupied |= to_bit;
+        }
+    }
+
+    // Atualiza o bitboard de ocupação total
+    all_occupied = white_occupied | black_occupied;
 }
 
 // Função temporária para imprimir o tabuleiro no console
@@ -404,4 +489,15 @@ void Board::print_board(const std::vector<int>& highlighted_squares) const {
     std::cout << "Turno: " << (turn == WHITE ? "BRANCAS" : "PRETAS")
               << std::endl;
     std::cout << std::endl;
+}
+
+// Função temporária para imprimir o histórico de movimentos
+void Board::print_history() const {
+    std::cout << "Histórico de movimentos:" << std::endl;
+    for (const auto& undo_info : history) {
+        std::cout << "Movimento: " << undo_info.move.from() << " -> "
+                  << undo_info.move.to()
+                  << ", Peça capturada: " << undo_info.captured_piece
+                  << std::endl;
+    }
 }
